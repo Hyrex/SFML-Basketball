@@ -19,6 +19,8 @@ Box2D Link : https://github.com/erincatto/Box2D
 
 Follow the documentation and build Box2D.lib if you wish to rebuild. I have published the dependencies lib and setup. Remember to setup them again inside Solution Properties.
 
+You can only build x64 due to Box2D and SFML combined.
+
 Feel free to reference or contributes changes.
 
 From Author, Hyrex
