@@ -1,0 +1,17 @@
+ $ cat .gitignore
+/*
+/Build
+/Intermediate
+!/Source
+!/Resources
+!/Box2D
+*.pdb
+*.o
+*.obj
+*.log
+!*.sln
+!*.dll
+!*.lib
+!.gitattributes
+!.gitignore
+!LICENSE
