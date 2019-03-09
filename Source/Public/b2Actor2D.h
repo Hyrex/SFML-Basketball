@@ -4,6 +4,7 @@
 #include "Defines.h"
 
 static const float PIXEL_PER_METER = 32.0f;
+class Application;
 
 enum EActorShapeType
 {
@@ -58,20 +59,24 @@ class b2Actor2D
 {
 public:
 
-	b2Actor2D(b2World* WorldContext, const std::string Name, const EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size = SFML::Vector2f(1,1), SFML::Vector2f Location = SFML::Vector2f(0,0), const float Rotation = 0.0f, const bool bIsDynamicBody = false, const bool bGenerateOverlaps = false);
+	b2Actor2D(Application* Package, b2World* WorldContext, const std::string Name, const EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size = SFML::Vector2f(1,1), SFML::Vector2f Location = SFML::Vector2f(0,0), const float Rotation = 0.0f, const bool bIsDynamicBody = false, const bool bGenerateOverlaps = false);
 	~b2Actor2D();
 
 	virtual void Tick();
 	SFML::Shape* GetShape() { return ObjectShapes.Get(); }
 	b2FixtureDef* GetFixtureDefinition() { return FixtureDefinition; }
 	b2Body*	GetBodyInstance() { return BodyInstance; }
+	Application* GetPackage() { return Package; }
+	bool IsDynamic() const { return bIsDynamicObject; }
 
 	void BeginOverlap(b2Actor2D* OverlappedActor);
 	void EndOverlap(b2Actor2D* OverlappedActor);
 	void BindOnBeginoverlap(void (*Callback)(b2Actor2D* OverlappedActor));
 	void BindOnEndOverlap(void (*Callback)(b2Actor2D* OverlappedActor));
+	void BindOnTick(void(*TickFunction)(b2Actor2D* Actor));
 
 private:
+	Application* Package;
 	std::string ObjectName;
 	FShapeCollection ObjectShapes;	// Act like display component
 	SFML::Shape* ObjectShapeCache;	// Do not invoke delete, handled in ObjectShapes.
@@ -83,8 +88,10 @@ private:
 	b2FixtureDef* FixtureDefinition;
 
 	bool bGenerateOverlaps = false;
+	bool bIsDynamicObject = false;
 	void (*OnBeginOverlapCallback)(b2Actor2D* OverlappedActor) = 0;
 	void (*OnEndOverlapCallback)(b2Actor2D* OverlappedActor) = 0;
+	void (*TickCallback)(b2Actor2D* Actor) = 0;
 
 	void MakeShapeInstance(const EActorShapeType ShapeType);
 	void SetShapeProperties(const EActorShapeType ShapeType, SFML::Vector2f Size);

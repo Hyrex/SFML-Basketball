@@ -26,7 +26,10 @@ public:
 	/* Handle Finalization after last Tick called.*/
 	void EndTick();
 
+	float GetElapsedTime() const { return ElapsedTime;  }
+
 private:
+
 	float ElapsedTime = 0.0f;
 	float TimeElapsedSinceLastFrame = 0.0f;
 	SFML::Clock FixedUpdateClock;

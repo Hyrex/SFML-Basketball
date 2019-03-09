@@ -1,3 +1,4 @@
+#include <Box2D/Box2D.h>
 #include "TickHandle.h"
 #include "Application.h"
 
@@ -26,12 +27,20 @@ void FTickHandle::BeginTick()
 void FTickHandle::Tick()
 {
 	if (!ContextObject) return;
+	if (!ContextObject->GetWorld()) return;
 	
 	TimeElapsedSinceLastFrame += FixedUpdateClock.restart().asSeconds();
 	if (TimeElapsedSinceLastFrame >= DELTA_TIME_STEP)
 	{
+		// Step is used to update physics position/rotation
+		ContextObject->GetWorld()->Step(DELTA_TIME_STEP, //update frequency
+			8,                //velocityIterations
+			3                 //positionIterations  
+		);
+
 		ContextObject->Tick(DELTA_TIME_STEP);
 		TimeElapsedSinceLastFrame -= DELTA_TIME_STEP;
+		ElapsedTime += DELTA_TIME_STEP;
 	}
 }
 

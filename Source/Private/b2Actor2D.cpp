@@ -1,8 +1,12 @@
 #include "b2Actor2D.h"
+#include "Application.h"
 
-b2Actor2D::b2Actor2D(b2World* WorldContext, const std::string Name, EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size, SFML::Vector2f Location, const float Rotation, const bool bIsDynamicBody, const bool bGenerateOverlaps)
+b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::string Name, EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size, SFML::Vector2f Location, const float Rotation, const bool bIsDynamicBody, const bool bGenerateOverlaps)
 {
+	if (!Package) return;
 	if (!WorldContext) return;
+
+	this->Package = Package;
 
 	ObjectName = Name;
 	ObjectShapes.ShapeType = ShapeType;
@@ -41,6 +45,7 @@ b2Actor2D::b2Actor2D(b2World* WorldContext, const std::string Name, EActorShapeT
 	BodyInstance->SetUserData(this);
 
 	this->bGenerateOverlaps = bGenerateOverlaps;
+	bIsDynamicObject = bIsDynamicBody;
 }
 
 b2Actor2D::~b2Actor2D()
@@ -53,8 +58,14 @@ b2Actor2D::~b2Actor2D()
 void b2Actor2D::Tick()
 {
 	// Box2D uses radians for rotation, SFML uses degree
+	// Snap rendering according to Box2D BodyInstance.
 	ObjectShapes.Get()->setRotation(BodyInstance->GetAngle() * 180 / b2_pi);
 	ObjectShapes.Get()->setPosition(BodyInstance->GetPosition().x*PIXEL_PER_METER, BodyInstance->GetPosition().y*PIXEL_PER_METER);
+
+	if (TickCallback != 0)
+	{
+		TickCallback(this);
+	}
 }
 
 void b2Actor2D::BeginOverlap(b2Actor2D* OverlappedActor)
@@ -88,6 +99,11 @@ void b2Actor2D::BindOnBeginoverlap(void (*Callback)(b2Actor2D* OverlappedActor))
 void b2Actor2D::BindOnEndOverlap(void (*Callback)(b2Actor2D* OverlappedActor))
 {
 	OnEndOverlapCallback = Callback;
+}
+
+void b2Actor2D::BindOnTick(void(*TickFunction)(b2Actor2D* Actor))
+{
+	TickCallback = TickFunction;
 }
 
 void b2Actor2D::MakeShapeInstance(const EActorShapeType ShapeType)

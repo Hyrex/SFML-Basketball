@@ -34,16 +34,17 @@ public:
 	void Tick(const float DeltaTime);
 	void EndPlay();
 
+	b2World* GetWorld() const { return World; }
+	FTickHandle* GetTickHandle() const { return TickHandle;  }
+
 private:
 
-	FRenderWindowData RenderWindowData;
 	FTickHandle* TickHandle;
+
+	FRenderWindowData RenderWindowData;
 	FAssetLoader* AssetLoader;
 	SFML::RenderWindow AppWindow;
 
-	SFML::Texture t;
-	SFML::RectangleShape s;
-	SFML::Text p;
 	SFML::Music* BGM;
 	
 	//Box2D
@@ -52,6 +53,9 @@ private:
 
 	std::vector<b2Actor2D*> b2Actors;
 	std::vector<SFML::Shape*> RenderShapes;
+
+	static void PivotTick(b2Actor2D* Actor);
+	static void WheelTick(b2Actor2D* Actor);
 
 	//
 };

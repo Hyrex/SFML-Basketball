@@ -48,17 +48,6 @@ int Application::Initialize()
 			BGM->play();
 		}
 
-#if 0	// demo
-		s.setTexture(FAssetLoader::FindTexture(AssetLoader, RESOURCES_TEXTURE_CHALKBOARD));
-		s.setSize(SFML::Vector2f((float)RenderWindowData.Width, (float)RenderWindowData.Height));
-
-		p.setFont(*FAssetLoader::FindFont(AssetLoader, RESOURCES_FONT_CHALK));
-		p.setCharacterSize(30);
-		p.setPosition(0, 0);
-		p.setFillColor(SFML::Color::White);
-		p.setString("JESUS FUCK!");
-#endif
-
 		// Window creation
 		AppWindow.create(RenderWindowData.GetVideoModeFromData(), RenderWindowData.GetWindowName());
 		AppWindow.setVerticalSyncEnabled(true);
@@ -76,19 +65,19 @@ int Application::Initialize()
 		const SFML::Vector2f RBorderLocation(ViewportX - BorderThickness * 0.5f	, ViewportY * 0.5f);
 
 
-		b2Actor2D* TopBorder = new b2Actor2D(World, "TopBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, XBorder, UBorderLocation);
+		b2Actor2D* TopBorder = new b2Actor2D(this, World, "TopBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, XBorder, UBorderLocation);
 		TopBorder->GetShape()->setOutlineThickness(-1);
 		TopBorder->GetShape()->setOutlineColor(sf::Color::Black);
 		TopBorder->GetShape()->setFillColor(sf::Color(100, 100, 100));
 		b2Actors.push_back(TopBorder);
 		
-		b2Actor2D* LeftBorder = new b2Actor2D(World, "LeftBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, YBorder, LBorderLocation);
+		b2Actor2D* LeftBorder = new b2Actor2D(this, World, "LeftBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, YBorder, LBorderLocation);
 		LeftBorder->GetShape()->setOutlineThickness(-1);
 		LeftBorder->GetShape()->setOutlineColor(sf::Color::Black);
 		LeftBorder->GetShape()->setFillColor(sf::Color(100, 100, 100));
 		b2Actors.push_back(LeftBorder);
 
-		b2Actor2D* RightBorder = new b2Actor2D(World, "RightBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, YBorder, RBorderLocation);
+		b2Actor2D* RightBorder = new b2Actor2D(this, World, "RightBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, YBorder, RBorderLocation);
 		RightBorder->GetShape()->setOutlineThickness(-1);
 		RightBorder->GetShape()->setOutlineColor(sf::Color::Black);
 		RightBorder->GetShape()->setFillColor(sf::Color(100, 100, 100));
@@ -123,28 +112,66 @@ int Application::Initialize()
 		SFML::Vector2f boardSize(8.0f, 200.0f);
 		SFML::Vector2f boardPos(ViewportX * 0.98f, ViewportY * 0.35f);
 		SFML::Vector2f netEdgeSize(8.0f, 90.0f);
-		SFML::Vector2f netEdgePos(offsetX - 48.0f + (netEdgeSize.y / 2 * sin(-0.174533)), offsetY + 16.0f);
+		SFML::Vector2f netEdgePos(offsetX - 48.0f + (netEdgeSize.y / 2 * sin(-0.174533f)), offsetY + 16.0f);
 		SFML::Vector2f sensorSize(48.0f, 48.0f);
 		SFML::Vector2f sensorPos((boardPos.x + netEdgePos.x) / 2, netEdgePos.y);
 
-		b2Actor2D* boardFrame1 = new b2Actor2D(World, "board1", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, boardSize, boardPos);
+		b2Actor2D* boardFrame1 = new b2Actor2D(this, World, "board1", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, boardSize, boardPos);
 		boardFrame1->GetShape()->setOutlineThickness(-1);
 		boardFrame1->GetShape()->setOutlineColor(sf::Color::Black);
 		boardFrame1->GetShape()->setFillColor(sf::Color(40, 40, 40, 255));
 		b2Actors.push_back(boardFrame1);
 
-		b2Actor2D* boardFrame2 = new b2Actor2D(World, "board2", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, netEdgeSize, netEdgePos);
+		b2Actor2D* boardFrame2 = new b2Actor2D(this, World, "board2", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, netEdgeSize, netEdgePos);
 		boardFrame2->GetShape()->setOutlineThickness(-1);
 		boardFrame2->GetShape()->setOutlineColor(sf::Color::Black);
 		boardFrame2->GetShape()->setFillColor(sf::Color(40, 40, 40, 255));
 		boardFrame2->GetBodyInstance()->SetTransform(boardFrame2->GetBodyInstance()->GetPosition(), -0.261799388f);
 		b2Actors.push_back(boardFrame2);
 
-		b2Actor2D* ScoreSensor = new b2Actor2D(World, "sensor", EActorShapeType::EST_Circle, Eb2ShapeType::ECT_Circle, sensorSize, sensorPos, 0.0, false, true);
+		b2Actor2D* ScoreSensor = new b2Actor2D(this, World, "sensor", EActorShapeType::EST_Circle, Eb2ShapeType::ECT_Circle, sensorSize, sensorPos, 0.0, false, true);
 		ScoreSensor->GetShape()->setOutlineThickness(-1);
 		ScoreSensor->GetShape()->setOutlineColor(sf::Color::Black);
 		ScoreSensor->GetShape()->setFillColor(sf::Color(255, 255, 0, 100));
 		b2Actors.push_back(ScoreSensor);
+
+		// The Track 
+		const int Row = 14;
+		const int Column = 2;
+
+		SFML::Vector2f trackStartLocation(ViewportX * 0.15f, ViewportY - 16.0f - (Row*32.0f));
+		SFML::Vector2f slingPosSize(32.0f, 32.0f);
+		SFML::RectangleShape* Tracks[Row][Column];
+		for (int i = 0; i < Row; ++i)
+		{
+			for (int j = 0; j < Column; ++j)
+			{
+				Tracks[i][j] = new SFML::RectangleShape();
+
+				Tracks[i][j]->setSize(slingPosSize);
+				Tracks[i][j]->setPosition(trackStartLocation.x + j * 32.0f, trackStartLocation.y + i * 32.0f);
+				Tracks[i][j]->setTexture(FAssetLoader::FindTexture(AssetLoader, RESOURCES_TEXTURE_BOXALT));
+				RenderShapes.push_back(Tracks[i][j]);
+			}
+		}
+
+		// Projector Pivot
+		SFML::Vector2f projectorPos(trackStartLocation.x + 32.0f, trackStartLocation.y + (Row / 2)*32.0f);
+		SFML::Vector2f restartPos(projectorPos.x / 32.0f, projectorPos.y / 32.0f);
+		b2Actor2D* Pivot = new b2Actor2D(this, World, "Pivot", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, SFML::Vector2f(8.0f, 8.0f), projectorPos, 0.0f, true, false);
+		Pivot->GetShape()->setOutlineThickness(-1);
+		Pivot->GetShape()->setOutlineColor(sf::Color::Black);
+		Pivot->GetShape()->setFillColor(sf::Color(0, 0, 255, 100));
+		Pivot->BindOnTick(PivotTick);
+		b2Actors.push_back(Pivot);
+
+		b2Actor2D* Wheel = new b2Actor2D(this, World, "Wheel", EActorShapeType::EST_Circle, Eb2ShapeType::ECT_Circle, SFML::Vector2f(128.0f, 128.0f), projectorPos, 0.0f, false, true);
+		Wheel->GetShape()->setOutlineThickness(-1);
+		Wheel->GetShape()->setOutlineColor(SFML::Color::Black);
+		Wheel->GetShape()->setFillColor(SFML::Color(0, 255, 255, 40));
+		Wheel->BindOnTick(WheelTick);
+		b2Actors.push_back(Wheel);
+			
 	}
 
 	return bInitChecks;
@@ -199,4 +226,32 @@ void Application::EndPlay()
 		SAFE_DELETE(i);
 
 	SAFE_DELETE(World);
+}
+
+void Application::PivotTick(b2Actor2D* Actor)
+{
+	if (!Actor) return;
+
+	if (Actor->IsDynamic())
+	{
+		const float ElapsedTime = Actor->GetPackage()->GetTickHandle()->GetElapsedTime();
+		const float cosfTime = cosf(ElapsedTime);
+	
+		/// FIX ME! Value constantly going up??
+		const float deltaY = cosf(ElapsedTime) / 32.0f;
+		b2Vec2 pos = Actor->GetBodyInstance()->GetPosition();
+		b2Vec2 Location = Actor->GetBodyInstance()->GetPosition() + b2Vec2(0, deltaY);
+		Actor->GetBodyInstance()->SetTransform(Location, Actor->GetBodyInstance()->GetAngle());
+	}
+}
+
+void Application::WheelTick(b2Actor2D* Actor)
+{
+	if (!Actor) return;
+
+	if (Actor->IsDynamic())
+	{
+		Actor->GetBodyInstance()->SetTransform(Actor->GetBodyInstance()->GetPosition(), Actor->GetBodyInstance()->GetAngle());
+	}
+
 }
