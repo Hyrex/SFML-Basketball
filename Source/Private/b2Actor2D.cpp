@@ -27,6 +27,9 @@ b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::str
 	BodyDefinition->position = b2Vec2(Location.x / PIXEL_PER_METER, Location.y / PIXEL_PER_METER);
 	BodyDefinition->type = bIsDynamicBody ? b2_dynamicBody : b2_staticBody;
 
+	InitialPosition = b2Vec2(Location.x / PIXEL_PER_METER, Location.y / PIXEL_PER_METER);
+	InitialRotation = Rotation;
+
 	MakeB2ShapeInstance(BodyType);
 	SetB2ShapeProperties(BodyType, Size);
 
@@ -66,6 +69,11 @@ void b2Actor2D::Tick()
 	{
 		TickCallback(this);
 	}
+}
+
+void b2Actor2D::ResetLocation()
+{
+	BodyInstance->SetTransform(InitialPosition, InitialRotation);
 }
 
 void b2Actor2D::BeginOverlap(b2Actor2D* OverlappedActor)
@@ -125,7 +133,7 @@ void b2Actor2D::SetShapeProperties(const EActorShapeType ShapeType, SFML::Vector
 		case EActorShapeType::EST_Circle:
 			if (SFML::CircleShape* pShape = dynamic_cast<SFML::CircleShape*>(ObjectShapeCache))
 			{
-				pShape->setRadius(Size.x);
+				pShape->setRadius(Size.x/2);
 			}
 
 			break;

@@ -8,6 +8,7 @@ bool FAssetLoader::LoadResources()
 	bResult &= LoadTexture(RESOURCES_TEXTURE_CHALKBOARD);
 	bResult &= LoadTexture(RESOURCES_TEXTURE_BASKETBALL);
 	bResult &= LoadTexture(RESOURCES_TEXTURE_BASKETBALLBOARD);
+	bResult &= LoadTexture(RESOURCES_TEXTURE_BACKGROUND);
 	bResult &= LoadTexture(RESOURCES_TEXTURE_WOOD);
 	bResult &= LoadTexture(RESOURCES_TEXTURE_BOXALT);
 	bResult &= LoadMusic(RESOURCES_AUDIO_TROLOLO);

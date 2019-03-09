@@ -63,11 +63,15 @@ public:
 	~b2Actor2D();
 
 	virtual void Tick();
+	std::string GetObjectName() const { return ObjectName;  }
 	SFML::Shape* GetShape() { return ObjectShapes.Get(); }
 	b2FixtureDef* GetFixtureDefinition() { return FixtureDefinition; }
 	b2Body*	GetBodyInstance() { return BodyInstance; }
 	Application* GetPackage() { return Package; }
 	bool IsDynamic() const { return bIsDynamicObject; }
+
+	void SetInitLocation(b2Vec2 Location) { InitialPosition = Location; }
+	void ResetLocation();
 
 	void BeginOverlap(b2Actor2D* OverlappedActor);
 	void EndOverlap(b2Actor2D* OverlappedActor);
@@ -86,6 +90,8 @@ private:
 	b2Shape* BodyShape;				// Act as collision component
 	Eb2ShapeType CollisionType;
 	b2FixtureDef* FixtureDefinition;
+	b2Vec2 InitialPosition;
+	float InitialRotation;
 
 	bool bGenerateOverlaps = false;
 	bool bIsDynamicObject = false;

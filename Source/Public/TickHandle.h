@@ -27,6 +27,8 @@ public:
 	void EndTick();
 
 	float GetElapsedTime() const { return ElapsedTime;  }
+	
+	void ClearTimer() { ElapsedTime = 0.0f;  }
 
 private:
 
