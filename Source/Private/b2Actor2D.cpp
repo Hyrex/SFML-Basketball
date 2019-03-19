@@ -1,7 +1,8 @@
 #include "b2Actor2D.h"
 #include "Application.h"
 
-b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::string Name, EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size, SFML::Vector2f Location, const float Rotation, const bool bIsDynamicBody, const bool bGenerateOverlaps)
+
+b2Actor2D::b2Actor2D(Application* Package, std::shared_ptr<b2World> WorldContext, const std::string Name, EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size, SFML::Vector2f Location, const float Rotation, const bool bIsDynamicBody, const bool bGenerateOverlaps, const bool bAutoActivate)
 {
 	if (!Package) return;
 	if (!WorldContext) return;
@@ -23,7 +24,7 @@ b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::str
 		ObjectShapes.Get()->setOutlineColor(sf::Color::Black);
 	}
 
-	BodyDefinition = new b2BodyDef();
+	BodyDefinition = std::make_shared<b2BodyDef>(); 
 	BodyDefinition->position = b2Vec2(Location.x / PIXEL_PER_METER, Location.y / PIXEL_PER_METER);
 	BodyDefinition->type = bIsDynamicBody ? b2_dynamicBody : b2_staticBody;
 
@@ -35,45 +36,59 @@ b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::str
 
 	if(BodyShape)
 	{
-		FixtureDefinition = new b2FixtureDef();
-		FixtureDefinition->shape = BodyShape;
+		FixtureDefinition = std::make_shared<b2FixtureDef>();
+		FixtureDefinition->shape = BodyShape.get();
 		FixtureDefinition->density = 0.5f;
 		FixtureDefinition->friction = 0.5f;
 		FixtureDefinition->restitution = 0.5f;
 		FixtureDefinition->isSensor = bGenerateOverlaps; // change it to MakeSensor and get data.
 	}
 	
-	BodyInstance = WorldContext->CreateBody(BodyDefinition);
-	BodyInstance->CreateFixture(FixtureDefinition);
+	BodyInstance = WorldContext->CreateBody(BodyDefinition.get());
+	BodyInstance->CreateFixture(FixtureDefinition.get());
 	BodyInstance->SetUserData(this);
 
 	this->bGenerateOverlaps = bGenerateOverlaps;
 	bIsDynamicObject = bIsDynamicBody;
+
+	if (bAutoActivate)
+	{
+		Activate();
+	}
 }
 
-b2Actor2D::~b2Actor2D()
-{
-	SAFE_DELETE(BodyDefinition);
-	SAFE_DELETE(FixtureDefinition);
-	SAFE_DELETE(BodyShape);
+b2Actor2D::b2Actor2D(Fb2ActorSpawnParam SpawnParam)
+{	
+	//Overloaded constructor.
+	b2Actor2D(SpawnParam.Package, SpawnParam.WorldContext, SpawnParam.Name, SpawnParam.ShapeType, SpawnParam.BodyType, SpawnParam.Size, SpawnParam.Location, SpawnParam.Rotation, SpawnParam.bIsDynamicBody, SpawnParam.bGenerateOverlaps, SpawnParam.bAutoActivate);
 }
 
 void b2Actor2D::Tick()
 {
-	// Box2D uses radians for rotation, SFML uses degree
-	// Snap rendering according to Box2D BodyInstance.
-	ObjectShapes.Get()->setRotation(BodyInstance->GetAngle() * 180 / b2_pi);
-	ObjectShapes.Get()->setPosition(BodyInstance->GetPosition().x*PIXEL_PER_METER, BodyInstance->GetPosition().y*PIXEL_PER_METER);
-
-	if (TickCallback != 0)
+	if (bIsActive)
 	{
-		TickCallback(this);
+		// Box2D uses radians for rotation, SFML uses degree
+		// Snap rendering according to Box2D BodyInstance.
+		ObjectShapes.Get()->setRotation(BodyInstance->GetAngle() * 180 / b2_pi);
+		ObjectShapes.Get()->setPosition(BodyInstance->GetPosition().x*PIXEL_PER_METER, BodyInstance->GetPosition().y*PIXEL_PER_METER);
+
+		if (TickCallback != 0)
+		{
+			TickCallback(this);
+		}
 	}
 }
 
-void b2Actor2D::ResetLocation()
+void b2Actor2D::ResetToInitTransform()
 {
-	BodyInstance->SetTransform(InitialPosition, InitialRotation);
+	if (BodyInstance)
+	{
+		BodyInstance->SetTransform(InitialPosition, InitialRotation);
+	}
+	else
+	{
+		LOG("No BodyInstance Crash was here.");
+	}
 }
 
 void b2Actor2D::BeginOverlap(b2Actor2D* OverlappedActor)
@@ -95,7 +110,6 @@ void b2Actor2D::EndOverlap(b2Actor2D* OverlappedActor)
 		{
 			OnEndOverlapCallback(OverlappedActor);
 		}
-
 	}
 }
 
@@ -116,31 +130,35 @@ void b2Actor2D::BindOnTick(void(*TickFunction)(b2Actor2D* Actor))
 
 void b2Actor2D::MakeShapeInstance(const EActorShapeType ShapeType)
 {
-	
 	switch (ShapeType)
 	{
-		case EActorShapeType::EST_Rectangle:	ObjectShapes.RectangleShape = new SFML::RectangleShape(); 	break;
-		case EActorShapeType::EST_Circle:		ObjectShapes.CircleShape = new SFML::CircleShape();			break;
-		case EActorShapeType::EST_Convex:		ObjectShapes.ConvexShape = new SFML::ConvexShape();			break;
+		case EActorShapeType::EST_Rectangle:	ObjectShapes.RectangleShape =	std::make_shared<SFML::RectangleShape>(); 		break;
+		case EActorShapeType::EST_Circle:		ObjectShapes.CircleShape	=	std::make_shared<SFML::CircleShape>();			break;
+		case EActorShapeType::EST_Convex:		ObjectShapes.ConvexShape	=	std::make_shared<SFML::ConvexShape>();			break;
 	}
+
+	// Prevent spawn at 0,0,0 at being visible before the first tick update.
+	ObjectShapes.Get()->setPosition(SFML::Vector2f(-200, -200));
 }
 
 void b2Actor2D::SetShapeProperties(const EActorShapeType ShapeType, SFML::Vector2f Size)
 {
+	using namespace SFML;
+
 	if (!ObjectShapeCache) ObjectShapeCache = ObjectShapes.Get();
 	switch (ShapeType)
 	{
 		case EActorShapeType::EST_Circle:
-			if (SFML::CircleShape* pShape = dynamic_cast<SFML::CircleShape*>(ObjectShapeCache))
+			if (CircleShape* const p = dynamic_cast<CircleShape*>(ObjectShapeCache.get()))
 			{
-				pShape->setRadius(Size.x/2);
+				p->setRadius(Size.x/2);
 			}
 
 			break;
 		case EActorShapeType::EST_Rectangle:
-			if (SFML::RectangleShape* pShape = dynamic_cast<SFML::RectangleShape*>(ObjectShapeCache))
+			if (RectangleShape* const p = dynamic_cast<RectangleShape*>(ObjectShapeCache.get()))
 			{
-				pShape->setSize(Size);
+				p->setSize(Size);
 			}
 
 			break;
@@ -152,10 +170,10 @@ void b2Actor2D::MakeB2ShapeInstance(const Eb2ShapeType BodyType)
 {
 	switch (BodyType)
 	{
-		case Eb2ShapeType::ECT_Chain:		BodyShape = new b2ChainShape(); break;
-		case Eb2ShapeType::ECT_Edge:		BodyShape = new b2EdgeShape(); break;
-		case Eb2ShapeType::ECT_Polygon:		BodyShape = new b2PolygonShape(); break;
-		case Eb2ShapeType::ECT_Circle:		BodyShape = new b2CircleShape(); break;
+	case Eb2ShapeType::ECT_Chain:			BodyShape = std::make_shared<b2ChainShape>();	break;
+		case Eb2ShapeType::ECT_Edge:		BodyShape = std::make_shared<b2EdgeShape>();	break;
+		case Eb2ShapeType::ECT_Polygon:		BodyShape = std::make_shared<b2PolygonShape>(); break;
+		case Eb2ShapeType::ECT_Circle:		BodyShape = std::make_shared<b2CircleShape>();	break;
 	}
 }
 
@@ -170,9 +188,9 @@ void b2Actor2D::SetB2ShapeProperties(const Eb2ShapeType BodyType, SFML::Vector2f
 			break;
 		case Eb2ShapeType::ECT_Polygon:	
 		{
-			if(b2PolygonShape* pShape = dynamic_cast<b2PolygonShape*>(BodyShape))
+			if(b2PolygonShape* const p = dynamic_cast<b2PolygonShape*>(BodyShape.get()))
 			{
-				pShape->SetAsBox((Size.x * 0.5f) / PIXEL_PER_METER, (Size.y * 0.5f) / PIXEL_PER_METER);
+				p->SetAsBox((Size.x * 0.5f) / PIXEL_PER_METER, (Size.y * 0.5f) / PIXEL_PER_METER);
 			}
 			
 			break;
@@ -180,12 +198,34 @@ void b2Actor2D::SetB2ShapeProperties(const Eb2ShapeType BodyType, SFML::Vector2f
 			
 		case Eb2ShapeType::ECT_Circle:		
 		{
-			if (b2CircleShape* pShape = dynamic_cast<b2CircleShape*>(BodyShape))
+			if (b2CircleShape* const p = dynamic_cast<b2CircleShape*>(BodyShape.get()))
 			{
-				pShape->m_radius = (Size.x * 0.5f) / PIXEL_PER_METER;
+				p->m_radius = (Size.x * 0.5f) / PIXEL_PER_METER;
 			}
 
 			break;
 		}
 	}
+}
+
+void b2Actor2D::Activate()
+{
+	bIsActive = true; 
+	BodyInstance->SetActive(true);
+	BodyInstance->SetAwake(true);
+}
+
+void b2Actor2D::MakeInactive()
+{
+	bIsActive = false;
+	
+	// Move it out of screen.
+	BodyInstance->SetActive(false);
+	BodyInstance->SetAwake(false);
+
+	ObjectShapes.Get()->setPosition(SFML::Vector2f(-200, -200));
+
+	//ObjectShapes.Get()->setRotation(BodyInstance->GetAngle() * 180 / b2_pi);
+	//ObjectShapes.Get()->setPosition(BodyInstance->GetPosition().x*PIXEL_PER_METER, BodyInstance->GetPosition().y*PIXEL_PER_METER);
+
 }

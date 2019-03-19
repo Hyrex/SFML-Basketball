@@ -15,7 +15,6 @@
 #define LOG(X) OutputDebugString(X)
 #define LOG_CMD(X) std::cout<<X<<std::endl;
 #define LOAD_CHECK(X, Path) if(!X) { std::string _s = "Cannot find file "; _s+=Path; _s+=". Load failed.\n"; LOG(_s.c_str());}
-#define SAFE_DELETE(P) if(P) {delete P; P = nullptr;}
 #define CORNFLOWER_BLUE SFML::Color(100, 149, 237)
 
 

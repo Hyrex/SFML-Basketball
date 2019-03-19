@@ -34,44 +34,43 @@ public:
 	void Tick(const float DeltaTime);
 	void EndPlay();
 
-	b2World* GetWorld() const { return World; }
-	FTickHandle* GetTickHandle() const { return TickHandle;  }
+	b2World* GetWorld() const { return World.get(); }
+	FTickHandle* GetTickHandle() const { return TickHandle.get();  }
 
 private:
 
-	FTickHandle* TickHandle;
-
+	std::shared_ptr<FTickHandle> TickHandle;
+	std::shared_ptr<FAssetLoader> AssetLoader;
 	FRenderWindowData RenderWindowData;
-	FAssetLoader* AssetLoader;
 	SFML::RenderWindow AppWindow;
 
 	SFML::Music* BGM;
 	
 	//Box2D
 	b2Vec2 Gravity; 
-	b2World* World;
-	b2Actor2DContactListener* b2ActorContactListner;
+	std::shared_ptr<b2World> World;
+	std::shared_ptr<b2Actor2DContactListener> b2ActorContactListner;
 
-	std::vector<b2Actor2D*> b2Actors;
-	std::vector<b2Actor2D*> BallPool;
-	std::vector<SFML::Shape*> RenderShapes;
-	SFML::Vertex* AngleIndicators[2];
 
-	SFML::RectangleShape* ChargeGaugeMax;		// Cached pointer, no need clear. Cleared via RenderShapes.
-	SFML::RectangleShape* ChargeGaugeProgress;	// Cached pointer, no need clear. Cleared via RenderShapes.
+	std::vector<std::shared_ptr<SFML::Shape>> RenderShapes;
+	std::vector<std::shared_ptr<b2Actor2D>> b2Actors;
+	std::vector<std::shared_ptr<b2Actor2D>> BallPools_ThatStilLWork;
+
+	SFML::Vertex AngleIndicators[2];
+
+	std::shared_ptr<SFML::RectangleShape> ChargeGaugeMax;		// Cached pointer, no need clear. Cleared via RenderShapes.
+	std::shared_ptr<SFML::RectangleShape> ChargeGaugeProgress;	// Cached pointer, no need clear. Cleared via RenderShapes.
 
 	bool bLeftMouseKeyDown = false;
 	bool bLeftMousePressed = false;
 	bool bRightMousePressed = false;
 	bool bMiddleMousePressed = false;
 
-	b2Actor2D* PivotCache;		// Cached pointer, no need clear. Cleared via b2Actors.
-	b2Actor2D* WheelCache;		// Cached pointer, no need clear. Cleared via b2Actors.
+	std::shared_ptr<b2Actor2D> PivotCache;		// Cached pointer, no need clear. Cleared via b2Actors.
+	std::shared_ptr<b2Actor2D> WheelCache;		// Cached pointer, no need clear. Cleared via b2Actors.
 
 	static void PivotTick(b2Actor2D* Actor);
 	static void WheelTick(b2Actor2D* Actor);
-
-	b2Actor2D* FindActor(std::string Label);
 
 
 	//

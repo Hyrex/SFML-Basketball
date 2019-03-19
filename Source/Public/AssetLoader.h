@@ -11,9 +11,9 @@ public:
 	~FAssetLoader() {};
 	bool LoadResources();
 	void UnloadResources();
-	static SFML::Texture*	FindTexture(const FAssetLoader* ContextObject, const std::string Name);
-	static SFML::Font*		FindFont(const FAssetLoader* ContextObject, const std::string Name);
-	static SFML::Music*		FindMusic(const FAssetLoader* ContextObject, const std::string Name);
+	static SFML::Texture*	FindTexture(const std::shared_ptr<FAssetLoader> ContextObject, const std::string Name);
+	static SFML::Font*		FindFont(const std::shared_ptr<FAssetLoader> ContextObject, const std::string Name);
+	static SFML::Music*		FindMusic(const std::shared_ptr<FAssetLoader> ContextObject, const std::string Name);
 	
 private:
 	std::map<const std::string, SFML::Texture*> TextureLibrary;

@@ -23,27 +23,12 @@ enum Eb2ShapeType
 
 struct FShapeCollection
 {
-	SFML::CircleShape* CircleShape;
-	SFML::RectangleShape* RectangleShape;
-	SFML::ConvexShape* ConvexShape;
+	std::shared_ptr<SFML::CircleShape> CircleShape;
+	std::shared_ptr<SFML::RectangleShape> RectangleShape;
+	std::shared_ptr<SFML::ConvexShape> ConvexShape;
 	EActorShapeType ShapeType;
-	
-	FShapeCollection()
-	{
-		CircleShape = nullptr;
-		RectangleShape = nullptr;
-		ConvexShape = nullptr;
-	}
 
-	~FShapeCollection() 
-	{	
-		SAFE_DELETE(CircleShape); 
-		SAFE_DELETE(RectangleShape); 
-		SAFE_DELETE(ConvexShape);
-		LOG("ObjectInstance shape collection destroyed\n");
-	}
-
-	SFML::Shape* Get()
+	std::shared_ptr<SFML::Shape> Get()
 	{
 		switch (ShapeType)
 		{
@@ -55,23 +40,40 @@ struct FShapeCollection
 	}
 };
 
+struct Fb2ActorSpawnParam
+{
+	Application* Package;
+	std::shared_ptr<b2World> WorldContext;
+	std::string Name;
+	EActorShapeType ShapeType;
+	Eb2ShapeType BodyType;
+	SFML::Vector2f Size; 
+	SFML::Vector2f Location;
+	float Rotation; 
+	bool bIsDynamicBody; 
+	bool bGenerateOverlaps;
+	bool bAutoActivate;
+};
+
 class b2Actor2D
 {
 public:
 
-	b2Actor2D(Application* Package, b2World* WorldContext, const std::string Name, const EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size = SFML::Vector2f(1,1), SFML::Vector2f Location = SFML::Vector2f(0,0), const float Rotation = 0.0f, const bool bIsDynamicBody = false, const bool bGenerateOverlaps = false);
-	~b2Actor2D();
+	b2Actor2D(Application* Package, std::shared_ptr<b2World> WorldContext, const std::string Name, const EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size = SFML::Vector2f(1,1), SFML::Vector2f Location = SFML::Vector2f(0,0), const float Rotation = 0.0f, const bool bIsDynamicBody = false, const bool bGenerateOverlaps = false, const bool bAutoActivate = true);
+	b2Actor2D(Fb2ActorSpawnParam SpawnParam);
 
 	virtual void Tick();
 	std::string GetObjectName() const { return ObjectName;  }
-	SFML::Shape* GetShape() { return ObjectShapes.Get(); }
-	b2FixtureDef* GetFixtureDefinition() { return FixtureDefinition; }
-	b2Body*	GetBodyInstance() { return BodyInstance; }
-	Application* GetPackage() { return Package; }
+	std::shared_ptr<SFML::Shape>	GetShape()				{ return ObjectShapes.Get(); }
+	std::shared_ptr<b2FixtureDef>	GetFixtureDefinition()	{ return FixtureDefinition; }
+	
+	b2Body*	GetBodyInstance() const { return BodyInstance; }
+	Application* GetPackage() const { return Package; }
 	bool IsDynamic() const { return bIsDynamicObject; }
 
 	void SetInitLocation(b2Vec2 Location) { InitialPosition = Location; }
-	void ResetLocation();
+	void SetInitRotation(float Rotation) { InitialRotation = Rotation; }
+	void ResetToInitTransform();
 
 	void BeginOverlap(b2Actor2D* OverlappedActor);
 	void EndOverlap(b2Actor2D* OverlappedActor);
@@ -79,20 +81,28 @@ public:
 	void BindOnEndOverlap(void (*Callback)(b2Actor2D* OverlappedActor));
 	void BindOnTick(void(*TickFunction)(b2Actor2D* Actor));
 
-private:
-	Application* Package;
-	std::string ObjectName;
-	FShapeCollection ObjectShapes;	// Act like display component
-	SFML::Shape* ObjectShapeCache;	// Do not invoke delete, handled in ObjectShapes.
+	void Activate();
+	void MakeInactive();
 
+	static b2Vec2 Tob2Vec2Location(SFML::Vector2f Location) { return b2Vec2(Location.x / PIXEL_PER_METER, Location.y / PIXEL_PER_METER); };
+
+private:
+	std::string ObjectName;
+	Application* Package;
+
+	FShapeCollection ObjectShapes;	// Act like display component
+	
 	b2Body* BodyInstance;
-	b2BodyDef* BodyDefinition;
-	b2Shape* BodyShape;				// Act as collision component
+	std::shared_ptr<SFML::Shape> ObjectShapeCache;	// Do not invoke delete, handled in ObjectShapes.
+	std::shared_ptr<b2BodyDef>  BodyDefinition;
+	std::shared_ptr<b2Shape> BodyShape;				// Act as collision component
+	std::shared_ptr<b2FixtureDef> FixtureDefinition;
+
 	Eb2ShapeType CollisionType;
-	b2FixtureDef* FixtureDefinition;
 	b2Vec2 InitialPosition;
 	float InitialRotation;
 
+	bool bIsActive = false;
 	bool bGenerateOverlaps = false;
 	bool bIsDynamicObject = false;
 	void (*OnBeginOverlapCallback)(b2Actor2D* OverlappedActor) = 0;
@@ -104,4 +114,3 @@ private:
 	void MakeB2ShapeInstance(const Eb2ShapeType BodyType);
 	void SetB2ShapeProperties(const Eb2ShapeType BodyType, SFML::Vector2f Size);
 };
-
