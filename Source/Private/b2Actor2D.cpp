@@ -2,7 +2,7 @@
 #include "Application.h"
 
 
-b2Actor2D::b2Actor2D(Application* Package, std::shared_ptr<b2World> WorldContext, const std::string Name, EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size, SFML::Vector2f Location, const float Rotation, const bool bIsDynamicBody, const bool bGenerateOverlaps, const bool bAutoActivate)
+b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::string Name, EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size, SFML::Vector2f Location, const float Rotation, const bool bIsDynamicBody, const bool bGenerateOverlaps, const bool bAutoActivate)
 {
 	if (!Package) return;
 	if (!WorldContext) return;
@@ -24,7 +24,7 @@ b2Actor2D::b2Actor2D(Application* Package, std::shared_ptr<b2World> WorldContext
 		ObjectShapes.Get()->setOutlineColor(sf::Color::Black);
 	}
 
-	BodyDefinition = std::make_shared<b2BodyDef>(); 
+	BodyDefinition = std::make_unique<b2BodyDef>(); 
 	BodyDefinition->position = b2Vec2(Location.x / PIXEL_PER_METER, Location.y / PIXEL_PER_METER);
 	BodyDefinition->type = bIsDynamicBody ? b2_dynamicBody : b2_staticBody;
 
@@ -36,7 +36,7 @@ b2Actor2D::b2Actor2D(Application* Package, std::shared_ptr<b2World> WorldContext
 
 	if(BodyShape)
 	{
-		FixtureDefinition = std::make_shared<b2FixtureDef>();
+		FixtureDefinition = std::make_unique<b2FixtureDef>();
 		FixtureDefinition->shape = BodyShape.get();
 		FixtureDefinition->density = 0.5f;
 		FixtureDefinition->friction = 0.5f;
@@ -57,10 +57,14 @@ b2Actor2D::b2Actor2D(Application* Package, std::shared_ptr<b2World> WorldContext
 	}
 }
 
-b2Actor2D::b2Actor2D(Fb2ActorSpawnParam SpawnParam)
+b2Actor2D::b2Actor2D(const Fb2ActorSpawnParam SpawnParam)
 {	
 	//Overloaded constructor.
 	b2Actor2D(SpawnParam.Package, SpawnParam.WorldContext, SpawnParam.Name, SpawnParam.ShapeType, SpawnParam.BodyType, SpawnParam.Size, SpawnParam.Location, SpawnParam.Rotation, SpawnParam.bIsDynamicBody, SpawnParam.bGenerateOverlaps, SpawnParam.bAutoActivate);
+}
+
+b2Actor2D::~b2Actor2D() 
+{
 }
 
 void b2Actor2D::Tick()
@@ -132,9 +136,9 @@ void b2Actor2D::MakeShapeInstance(const EActorShapeType ShapeType)
 {
 	switch (ShapeType)
 	{
-		case EActorShapeType::EST_Rectangle:	ObjectShapes.RectangleShape =	std::make_shared<SFML::RectangleShape>(); 		break;
-		case EActorShapeType::EST_Circle:		ObjectShapes.CircleShape	=	std::make_shared<SFML::CircleShape>();			break;
-		case EActorShapeType::EST_Convex:		ObjectShapes.ConvexShape	=	std::make_shared<SFML::ConvexShape>();			break;
+		case EActorShapeType::EST_Rectangle:	ObjectShapes.RectangleShape =	std::make_unique<SFML::RectangleShape>(); 		break;
+		case EActorShapeType::EST_Circle:		ObjectShapes.CircleShape	=	std::make_unique<SFML::CircleShape>();			break;
+		case EActorShapeType::EST_Convex:		ObjectShapes.ConvexShape	=	std::make_unique<SFML::ConvexShape>();			break;
 	}
 
 	// Prevent spawn at 0,0,0 at being visible before the first tick update.
@@ -149,20 +153,17 @@ void b2Actor2D::SetShapeProperties(const EActorShapeType ShapeType, SFML::Vector
 	switch (ShapeType)
 	{
 		case EActorShapeType::EST_Circle:
-			if (CircleShape* const p = dynamic_cast<CircleShape*>(ObjectShapeCache.get()))
+			if (CircleShape* const p = dynamic_cast<CircleShape*>(ObjectShapeCache))
 			{
 				p->setRadius(Size.x/2);
 			}
-
 			break;
 		case EActorShapeType::EST_Rectangle:
-			if (RectangleShape* const p = dynamic_cast<RectangleShape*>(ObjectShapeCache.get()))
+			if (RectangleShape* const p = dynamic_cast<RectangleShape*>(ObjectShapeCache))
 			{
 				p->setSize(Size);
 			}
-
 			break;
-	
 	}
 }
 
@@ -170,10 +171,10 @@ void b2Actor2D::MakeB2ShapeInstance(const Eb2ShapeType BodyType)
 {
 	switch (BodyType)
 	{
-	case Eb2ShapeType::ECT_Chain:			BodyShape = std::make_shared<b2ChainShape>();	break;
-		case Eb2ShapeType::ECT_Edge:		BodyShape = std::make_shared<b2EdgeShape>();	break;
-		case Eb2ShapeType::ECT_Polygon:		BodyShape = std::make_shared<b2PolygonShape>(); break;
-		case Eb2ShapeType::ECT_Circle:		BodyShape = std::make_shared<b2CircleShape>();	break;
+		case Eb2ShapeType::ECT_Chain:		BodyShape = std::make_unique<b2ChainShape>();	break;
+		case Eb2ShapeType::ECT_Edge:		BodyShape = std::make_unique<b2EdgeShape>();	break;
+		case Eb2ShapeType::ECT_Polygon:		BodyShape = std::make_unique<b2PolygonShape>(); break;
+		case Eb2ShapeType::ECT_Circle:		BodyShape = std::make_unique<b2CircleShape>();	break;
 	}
 }
 

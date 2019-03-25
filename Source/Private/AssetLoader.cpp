@@ -44,28 +44,28 @@ void FAssetLoader::UnloadResources()
 
 }
 
-SFML::Texture* FAssetLoader::FindTexture(const std::shared_ptr<FAssetLoader> ContextObject, const std::string Name)
+SFML::Texture* FAssetLoader::FindTexture(FAssetLoader* ContextObject, const std::string Name)
 {
-	if (!ContextObject.get()) return nullptr;
+	if (!ContextObject) return nullptr;
 
-	auto Iterator = ContextObject.get()->TextureLibrary.find(Name);
-	return (Iterator != ContextObject.get()->TextureLibrary.end()) ? Iterator->second : nullptr ;
+	auto Iterator = ContextObject->TextureLibrary.find(Name);
+	return (Iterator != ContextObject->TextureLibrary.end()) ? Iterator->second : nullptr ;
 }
 
-SFML::Font* FAssetLoader::FindFont(const std::shared_ptr<FAssetLoader> ContextObject, const std::string Name)
+SFML::Font* FAssetLoader::FindFont(FAssetLoader* ContextObject, const std::string Name)
 {
-	if (!ContextObject.get()) return nullptr;
+	if (!ContextObject) return nullptr;
 
-	auto Iterator = ContextObject.get()->FontLibrary.find(Name);
-	return (Iterator != ContextObject.get()->FontLibrary.end()) ? Iterator->second : nullptr;
+	auto Iterator = ContextObject->FontLibrary.find(Name);
+	return (Iterator != ContextObject->FontLibrary.end()) ? Iterator->second : nullptr;
 }
 
-SFML::Music * FAssetLoader::FindMusic(const std::shared_ptr<FAssetLoader> ContextObject, const std::string Name)
+SFML::Music* FAssetLoader::FindMusic(FAssetLoader* ContextObject, const std::string Name)
 {
-	if (!ContextObject.get()) return nullptr;
+	if (!ContextObject) return nullptr;
 
-	auto Iterator = ContextObject.get()->MusicLibrary.find(Name);
-	return (Iterator != ContextObject.get()->MusicLibrary.end()) ? Iterator->second : nullptr;
+	auto Iterator = ContextObject->MusicLibrary.find(Name);
+	return (Iterator != ContextObject->MusicLibrary.end()) ? Iterator->second : nullptr;
 }
 
 bool FAssetLoader::LoadTexture(const std::string& FileName)

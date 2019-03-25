@@ -36,8 +36,5 @@ private:
 	float TimeElapsedSinceLastFrame = 0.0f;
 	SFML::Clock FixedUpdateClock;
 	Application* ContextObject;
-
-	//typedef void (Application::*TickFunction)(const float DeltaTime);
-	//TickFunction TickFunc;
 };
 

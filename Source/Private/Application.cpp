@@ -3,21 +3,15 @@
 #include "Application.h"
 #include "b2Actor2D.h"
 #include "b2Actor2DContactListener.h"
-#include "TickHandle.h"
-#include "AssetLoader.h"
+
 
 Application::Application()
 {
-	TickHandle = std::make_shared<FTickHandle>();
-	AssetLoader = std::make_shared<FAssetLoader>();
-	b2ActorContactListner = std::make_shared<b2Actor2DContactListener>();
+	b2ActorContactListner = std::unique_ptr<b2Actor2DContactListener>();
 
 	Gravity = b2Vec2(0.f, 9.81f);
 	World = std::make_shared<b2World>(Gravity);
 	World->SetContactListener(b2ActorContactListner.get());
-
-	ChargeGaugeMax = std::make_shared<SFML::RectangleShape>();
-	ChargeGaugeProgress = std::make_shared<SFML::RectangleShape>();
 }
 
 Application::~Application()
@@ -28,8 +22,7 @@ void Application::BeginPlay()
 {
 	while (AppWindow.isOpen())
 	{
-		if (TickHandle)
-			TickHandle->BeginTick();
+		TickHandle.BeginTick();
 	}
 
 	EndPlay();
@@ -39,17 +32,15 @@ int Application::Initialize()
 {
 	// Reduce the code length, scope in this function only.
 	using namespace sf;
+	using namespace std;
 
 	bool bInitChecks = true;
-	if (TickHandle)
-		bInitChecks &= TickHandle->BindApplication(this);
-
-	if (AssetLoader)
-		bInitChecks &= AssetLoader->LoadResources();
+	bInitChecks &= TickHandle.BindApplication(this);
+	bInitChecks &= AssetLoader.LoadResources();
 
 	if (bInitChecks)
 	{
-		if (BGM = FAssetLoader::FindMusic(AssetLoader, RESOURCES_AUDIO_TROLOLO))
+		if (BGM = FAssetLoader::FindMusic(&AssetLoader, RESOURCES_AUDIO_TROLOLO))
 		{
 			BGM->setVolume(0);
 			BGM->setLoop(true);
@@ -67,52 +58,53 @@ int Application::Initialize()
 		const float ViewportY = (float)RenderWindowData.Height;
 		const Vector2f XBorder(ViewportX, BorderThickness);
 		const Vector2f YBorder(BorderThickness, ViewportY * 0.7f);
-		const Vector2f UBorderLocation(ViewportX * 0.5f					, BorderThickness * 0.5f);
-		const Vector2f DBorderLocation(ViewportX * 0.5f					, ViewportY - BorderThickness * 0.5f);
+		const Vector2f UBorderLocation(ViewportX * 0.5f						, BorderThickness * 0.5f);
+		const Vector2f DBorderLocation(ViewportX * 0.5f						, ViewportY - BorderThickness * 0.5f);
 		const Vector2f LBorderLocation(BorderThickness * 0.5f				, ViewportY * 0.5f - (ViewportY * .15f) ); // 1 - .7f div 2
 		const Vector2f RBorderLocation(ViewportX - BorderThickness * 0.5f	, ViewportY * 0.5f - (ViewportY * .15f) ); // 1 - .7f div 2
 
+		// Collapsed function body. Transfering ownership of local unique ptr to the container
+		auto b2ActorInit = [this](unique_ptr<b2Actor2D>& p, const Color c) ->void 
+		{
+			p->GetShape()->setOutlineThickness(-1); /// FIX ME : crash on line 139 lambda call
+			p->GetShape()->setOutlineColor(Color::Black);
+			p->GetShape()->setFillColor(c);
+			b2Actors.push_back(move(p));
+		};
 
-		std::shared_ptr<b2Actor2D> TopBorder = std::make_shared<b2Actor2D>(this, World, "TopBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, XBorder, UBorderLocation);
-		TopBorder->GetShape()->setOutlineThickness(-1);
-		TopBorder->GetShape()->setOutlineColor(Color::Black);
-		TopBorder->GetShape()->setFillColor(Color(100, 100, 100));
-		b2Actors.push_back(TopBorder);
-		
-		std::shared_ptr<b2Actor2D> LeftBorder = std::make_shared<b2Actor2D>(this, World, "LeftBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, YBorder, LBorderLocation);
-		LeftBorder->GetShape()->setOutlineThickness(-1);
-		LeftBorder->GetShape()->setOutlineColor(Color::Black);
-		LeftBorder->GetShape()->setFillColor(Color(100, 100, 100));
-		b2Actors.push_back(LeftBorder);
+		unique_ptr<b2Actor2D> TopBorder = make_unique<b2Actor2D>(this, World.get(), "TopBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, XBorder, UBorderLocation);
+		b2ActorInit(TopBorder, Color(100, 100, 100));
 
-		std::shared_ptr<b2Actor2D> RightBorder = std::make_shared<b2Actor2D>(this, World, "RightBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, YBorder, RBorderLocation);
-		RightBorder->GetShape()->setOutlineThickness(-1);
-		RightBorder->GetShape()->setOutlineColor(Color::Black);
-		RightBorder->GetShape()->setFillColor(Color(100, 100, 100));
-		b2Actors.push_back(RightBorder);
+		unique_ptr<b2Actor2D> LeftBorder = make_unique<b2Actor2D>(this, World.get(), "LeftBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, YBorder, LBorderLocation);
+		b2ActorInit(LeftBorder , Color(100, 100, 100) );
+
+		unique_ptr<b2Actor2D> RightBorder = make_unique<b2Actor2D>(this, World.get(), "RightBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, YBorder, RBorderLocation);
+		b2ActorInit(RightBorder,Color(100, 100, 100));
 
 #if 1 // debug floor!
-		std::shared_ptr<b2Actor2D> BotBorder = std::make_shared<b2Actor2D>(this, World, "BotBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, XBorder, DBorderLocation);
-		BotBorder->GetShape()->setOutlineThickness(-1);
-		BotBorder->GetShape()->setOutlineColor(Color::Black);
-		BotBorder->GetShape()->setFillColor(Color(100, 100, 100));
-		b2Actors.push_back(BotBorder);
+		unique_ptr<b2Actor2D> BotBorder = make_unique<b2Actor2D>(this, World.get(), "BotBorder", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, XBorder, DBorderLocation);
+		b2ActorInit(BotBorder, Color(100, 100, 100));
 #endif 
-		std::shared_ptr<RectangleShape> Background = std::make_shared<RectangleShape>(Vector2f(ViewportX, ViewportY));
-		Background->setTexture(FAssetLoader::FindTexture(AssetLoader, RESOURCES_TEXTURE_BACKGROUND));
-		RenderShapes.push_back(Background);
+		unique_ptr<RectangleShape> Background = make_unique<RectangleShape>(Vector2f(ViewportX, ViewportY));
+		Background->setTexture(FAssetLoader::FindTexture(&AssetLoader, RESOURCES_TEXTURE_BACKGROUND));
+		RenderShapes.push_back(move(Background));
 
-		std::shared_ptr<RectangleShape> Scoreboard = std::make_shared<RectangleShape>(Vector2f(ViewportX, ViewportY * .3f));
+		unique_ptr<RectangleShape> Scoreboard = make_unique<RectangleShape>(Vector2f(ViewportX, ViewportY * .3f));
 		Scoreboard->setPosition(0.0f, ViewportY * 0.7f);
-		Scoreboard->setTexture(FAssetLoader::FindTexture(AssetLoader, RESOURCES_TEXTURE_CHALKBOARD));
-		RenderShapes.push_back(Scoreboard);
+		Scoreboard->setTexture(FAssetLoader::FindTexture(&AssetLoader, RESOURCES_TEXTURE_CHALKBOARD));
+		RenderShapes.push_back(move(Scoreboard));
 
-		ChargeGaugeMax->setFillColor(Color(145, 145, 145, 255));
-		ChargeGaugeMax->setSize(Vector2f(160.0f, 8.0f));
-		RenderShapes.push_back(ChargeGaugeMax);
+		unique_ptr<RectangleShape> ChargeGaugeMaxUniquePtr = make_unique<RectangleShape>();
+		ChargeGaugeMaxUniquePtr->setFillColor(Color(145, 145, 145, 255));
+		ChargeGaugeMaxUniquePtr->setSize(Vector2f(160.0f, 8.0f));
+		ChargeGaugeMax = ChargeGaugeMaxUniquePtr.get(); // Fill up the cache pointer, but it is rely on its last moved position!
+		RenderShapes.push_back(move(ChargeGaugeMaxUniquePtr));
 
-		ChargeGaugeProgress->setFillColor(Color::Yellow);
-		RenderShapes.push_back(ChargeGaugeProgress);
+		unique_ptr<RectangleShape> ChargeGaugeProgressUniquePtr = make_unique<RectangleShape>();
+		ChargeGaugeProgressUniquePtr->setFillColor(Color::Yellow);
+		ChargeGaugeProgressUniquePtr->setFillColor(Color::Yellow);
+		ChargeGaugeProgress = ChargeGaugeProgressUniquePtr.get(); // Fill up the cache pointer, but it is rely on its last moved position!
+		RenderShapes.push_back(move(ChargeGaugeProgressUniquePtr));
 
 		for (int i = 0; i < 2; i++)
 		{
@@ -122,69 +114,27 @@ int Application::Initialize()
 		// Board
 		const float offsetX = ViewportX * 0.98f;
 		const float offsetY = ViewportY * 0.35f;
-		Vector2f boardSize(8.0f, 200.0f);
-		Vector2f boardPos(ViewportX * 0.98f, ViewportY * 0.35f);
-		Vector2f netEdgeSize(8.0f, 90.0f);
-		Vector2f netEdgePos(offsetX - 48.0f + (netEdgeSize.y / 2 * sin(-0.174533f)), offsetY + 16.0f);
-		Vector2f sensorSize(48.0f, 48.0f);
-		Vector2f sensorPos((boardPos.x + netEdgePos.x) / 2, netEdgePos.y);
+		const Vector2f boardSize(8.0f, 200.0f);
+		const Vector2f boardPos(ViewportX * 0.98f, ViewportY * 0.35f);
 
-		std::shared_ptr<b2Actor2D> BoardFrame1 = std::make_shared<b2Actor2D>(this, World, "board1", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, boardSize, boardPos);
-		BoardFrame1->GetShape()->setOutlineThickness(-1);
-		BoardFrame1->GetShape()->setOutlineColor(Color::Black);
-		BoardFrame1->GetShape()->setFillColor(Color(40, 40, 40, 255));
-		b2Actors.push_back(BoardFrame1);
+		unique_ptr<b2Actor2D> BoardFrame1 = make_unique<b2Actor2D>(this, World.get(), "board1", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, boardSize, boardPos);
+		b2ActorInit(BoardFrame1, Color(40, 40, 40, 255));
 
-		std::shared_ptr<b2Actor2D> BoardFrame2 = std::make_shared<b2Actor2D>(this, World, "board2", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, netEdgeSize, netEdgePos);
-		BoardFrame2->GetShape()->setOutlineThickness(-1);
-		BoardFrame2->GetShape()->setOutlineColor(Color::Black);
-		BoardFrame2->GetShape()->setFillColor(Color(40, 40, 40, 255));
+		const Vector2f netEdgeSize(8.0f, 90.0f);
+		const Vector2f netEdgePos(offsetX - 48.0f + (netEdgeSize.y / 2 * sin(-0.174533f)), offsetY + 16.0f);
+		
+		unique_ptr<b2Actor2D> BoardFrame2 = make_unique<b2Actor2D>(this, World.get(), "board2", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, netEdgeSize, netEdgePos);
 		BoardFrame2->GetBodyInstance()->SetTransform(BoardFrame2->GetBodyInstance()->GetPosition(), -0.261799388f);
-		b2Actors.push_back(BoardFrame2);
+		b2ActorInit(BoardFrame2, Color(40, 40, 40, 255));
+	
+		const Vector2f sensorSize(48.0f, 48.0f);
+		const Vector2f sensorPos((boardPos.x + netEdgePos.x) / 2, netEdgePos.y);
+		
+		unique_ptr<b2Actor2D> ScoreSensor = make_unique<b2Actor2D>(this, World.get(), "sensor", EActorShapeType::EST_Circle, Eb2ShapeType::ECT_Circle, sensorSize, sensorPos, 0.0f, false, true);
+		b2ActorInit(ScoreSensor, Color(255, 255, 0, 100));
 
-		std::shared_ptr<b2Actor2D> ScoreSensor = std::make_shared<b2Actor2D>(this, World, "sensor", EActorShapeType::EST_Circle, Eb2ShapeType::ECT_Circle, sensorSize, sensorPos, 0.0f, false, true);
-		ScoreSensor->GetShape()->setOutlineThickness(-1);
-		ScoreSensor->GetShape()->setOutlineColor(Color::Black);
-		ScoreSensor->GetShape()->setFillColor(Color(255, 255, 0, 100));
-		b2Actors.push_back(ScoreSensor);
-
-		// The Track 
-		const int Row = 14;
-		const int Column = 2;
-
-		const Vector2f trackStartLocation(ViewportX * 0.15f, ViewportY - 16.0f - (Row*32.0f));
-		const Vector2f slingPosSize(32.0f, 32.0f);
-		std::shared_ptr<RectangleShape> Tracks[Row][Column];
-		for (int i = 0; i < Row; ++i)
-		{
-			for (int j = 0; j < Column; ++j)
-			{
-				Tracks[i][j] = std::make_shared<RectangleShape>();
-
-				Tracks[i][j]->setSize(slingPosSize);
-				Tracks[i][j]->setPosition(trackStartLocation.x + j * 32.0f, trackStartLocation.y + i * 32.0f);
-				Tracks[i][j]->setTexture(FAssetLoader::FindTexture(AssetLoader, RESOURCES_TEXTURE_BOXALT));
-				RenderShapes.push_back(Tracks[i][j]);
-			}
-		}
-
-		// Projector Pivot
-		const Vector2f projectorPos(trackStartLocation.x + 32.0f, trackStartLocation.y + (Row / 2)*32.0f);
-		std::shared_ptr<b2Actor2D> const Pivot = std::make_shared<b2Actor2D>(this, World, "Pivot", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, Vector2f(8.0f, 8.0f), projectorPos, 0.0f, false, false);
-		Pivot->GetShape()->setOutlineThickness(-1);
-		Pivot->GetShape()->setOutlineColor(Color::Black);
-		Pivot->GetShape()->setFillColor(Color(0, 0, 255, 100));
-		Pivot->BindOnTick(PivotTick);
-		PivotCache = Pivot;
-		b2Actors.push_back(Pivot);
-
-		std::shared_ptr<b2Actor2D> const Wheel = std::make_shared<b2Actor2D>(this, World, "Wheel", EActorShapeType::EST_Circle, Eb2ShapeType::ECT_Circle, Vector2f(128.0f, 128.0f), projectorPos, 0.0f, false, true);
-		Wheel->GetShape()->setOutlineThickness(-1);
-		Wheel->GetShape()->setOutlineColor(Color::Black);
-		Wheel->GetShape()->setFillColor(Color(0, 255, 255, 40));
-		Wheel->BindOnTick(WheelTick);
-		WheelCache = Wheel;
-		b2Actors.push_back(Wheel);	
+		MakeTrack();
+		MakeProjector();
 	}
 
 	return bInitChecks;
@@ -203,14 +153,14 @@ void Application::Tick(const float DeltaTime)
 		}
 	}
 
-	for (auto i : b2Actors)
+	for (auto& i : b2Actors)
 	{
 		if (i) i->Tick();
 	}
 
-	for (auto i : BallPools_ThatStilLWork)
+	//for (auto& i : BallPools_ThatStilLWork)
 	{
-		if (i) i->Tick();
+		//if (i) i->Tick();
 	}
 
 
@@ -253,7 +203,7 @@ void Application::Tick(const float DeltaTime)
 		bLeftMousePressed = false;
 	}
 
-
+#if 0
 	// Right Click to Spawn Ball.
 	if (SFML::Mouse::isButtonPressed(SFML::Mouse::Right))
 	{
@@ -270,7 +220,7 @@ void Application::Tick(const float DeltaTime)
 
 				Fb2ActorSpawnParam SpawnParam;
 				SpawnParam.Package = this;
-				SpawnParam.WorldContext = World;
+				SpawnParam.WorldContext = World.get();
 				SpawnParam.Name = "Ball";
 				SpawnParam.ShapeType = EActorShapeType::EST_Circle;
 				SpawnParam.BodyType = Eb2ShapeType::ECT_Circle;
@@ -282,20 +232,21 @@ void Application::Tick(const float DeltaTime)
 				SpawnParam.bAutoActivate = true;
 
 				//std::shared_ptr<b2Actor2D> Ball = BallPool->Spawn();
-				//std::shared_ptr<b2Actor2D> Ball = std::make_shared<b2Actor2D>(SpawnParam);
+				// Shared ptr issue with b2World make things crash.
+				std::unique_ptr<b2Actor2D> Ball = std::make_unique<b2Actor2D>(SpawnParam);
 				
-				std::shared_ptr<b2Actor2D> Ball = std::make_shared<b2Actor2D>(this, World, "Ball", EST_Circle, ECT_Circle, SFML::Vector2f(32, 32),
-					BallSpawnLocation, 0.0f, true, false, true); 
+				//std::unique_ptr<b2Actor2D> Ball = std::make_unique<b2Actor2D>(this, World.get(), "Ball", EST_Circle, ECT_Circle, SFML::Vector2f(32, 32),
+				//	BallSpawnLocation, 0.0f, true, false, true); 
 				Ball->SetInitLocation(b2Actor2D::Tob2Vec2Location(BallSpawnLocation));
 				Ball->SetInitRotation(0);
 				Ball->ResetToInitTransform();
 				Ball->GetShape()->setOutlineThickness(1);
-				Ball->GetShape()->setTexture(FAssetLoader::FindTexture(AssetLoader, RESOURCES_TEXTURE_BASKETBALL));
+				Ball->GetShape()->setTexture(FAssetLoader::FindTexture(&AssetLoader, RESOURCES_TEXTURE_BASKETBALL));
 				Ball->GetBodyInstance()->SetLinearVelocity(b2Vec2(-velocity * sinf(-CurrentRotationAngle * 3.142f / 180.0f), +velocity * cosf(-CurrentRotationAngle * 3.142f / 180.0f)));
 				Ball->GetFixtureDefinition()->density = 0.83f;
 				Ball->GetFixtureDefinition()->friction = 0.4f;
 				Ball->GetFixtureDefinition()->restitution = 0.65f;
-				BallPools_ThatStilLWork.push_back(Ball);
+				BallPools_ThatStilLWork.push_back(std::move(Ball));
 			}
 			bRightMousePressed = true;
 		}
@@ -304,7 +255,7 @@ void Application::Tick(const float DeltaTime)
 	{
 		bRightMousePressed = false;
 	}
-	
+#endif	
 
 
 	// Middle Button ： Reset
@@ -316,11 +267,11 @@ void Application::Tick(const float DeltaTime)
 
 			// Prevent accumulative cosine input.
 			bMiddleMousePressed = true;
-			TickHandle->ClearTimer();
+			TickHandle.ClearTimer();
 			PivotCache->ResetToInitTransform();
 			WheelCache->ResetToInitTransform();
 
-			for (auto i : BallPools_ThatStilLWork)
+			for (auto& i : BallPools_ThatStilLWork)
 			{
 				i->MakeInactive();
 			}
@@ -346,16 +297,16 @@ void Application::Tick(const float DeltaTime)
 	// Rendering
 	AppWindow.clear(CORNFLOWER_BLUE);
 
-	for (auto Itr : RenderShapes)
+	for (auto& Itr : RenderShapes)
 		AppWindow.draw(*Itr);
 	
-	for (auto Itr : b2Actors)
+	for (auto& Itr : b2Actors)
 		AppWindow.draw(*Itr->GetShape());
 
 	//for (auto Itr : BallPool->Actors)
 		//AppWindow.draw(*Itr->GetShape());
 
-	for (auto Itr : BallPools_ThatStilLWork)
+	for (auto& Itr : BallPools_ThatStilLWork)
 		AppWindow.draw(*Itr->GetShape());
 
 
@@ -365,22 +316,75 @@ void Application::Tick(const float DeltaTime)
 
 void Application::EndPlay()
 {
-	if (TickHandle)
-	{
-		TickHandle->EndTick();
-	}
+	TickHandle.EndTick();
+	AssetLoader.UnloadResources();
+}
 
-	if (AssetLoader)
+void Application::MakeTrack()
+{
+	using namespace std;
+	using namespace sf;
+
+	// The Track 
+	const float ViewportX = (float)RenderWindowData.Width;
+	const float ViewportY = (float)RenderWindowData.Height;
+	const int Row = 14;
+	const int Column = 2;
+
+	const Vector2f StartLocation(ViewportX * 0.15f, ViewportY - 16.0f - (Row*32.0f));
+	const Vector2f Size(32.0f, 32.0f);
+
+	unique_ptr<RectangleShape> Tracks[Row][Column];
+	for (int i = 0; i < Row; ++i)
 	{
-		AssetLoader->UnloadResources();
+		for (int j = 0; j < Column; ++j)
+		{
+			Tracks[i][j] = make_unique<RectangleShape>();
+
+			Tracks[i][j]->setSize(Size);
+			Tracks[i][j]->setPosition(StartLocation.x + j * 32.0f, StartLocation.y + i * 32.0f);
+			Tracks[i][j]->setTexture(FAssetLoader::FindTexture(&AssetLoader, RESOURCES_TEXTURE_BOXALT));
+			RenderShapes.push_back(move(Tracks[i][j]));
+		}
 	}
+}
+
+void Application::MakeProjector()
+{
+	using namespace std;
+	using namespace sf;
+
+	// Collapsed function body. Transfering ownership of local unique ptr to the container
+	auto Setup = [this](unique_ptr<b2Actor2D>& p, const Color c) ->void
+	{
+		p->GetShape()->setOutlineThickness(-1);
+		p->GetShape()->setOutlineColor(Color::Black);
+		p->GetShape()->setFillColor(c);
+		b2Actors.push_back(move(p));
+	};
+
+	// Projector Pivot
+	const int Row = 14;
+	const float ViewportX = (float)RenderWindowData.Width;
+	const float ViewportY = (float)RenderWindowData.Height;
+	const Vector2f StartLocation(ViewportX * 0.15f, ViewportY - 16.0f - (Row * 32.0f));
+	const Vector2f Location(StartLocation.x + 32.0f, StartLocation.y + (Row / 2)*32.0f);
+	unique_ptr<b2Actor2D> Pivot = make_unique<b2Actor2D>(this, World.get(), "Pivot", EActorShapeType::EST_Rectangle, Eb2ShapeType::ECT_Polygon, Vector2f(8.0f, 8.0f), Location, 0.0f, false, false);
+	Pivot->BindOnTick(PivotTick);
+	PivotCache = Pivot.get();
+	Setup(Pivot, Color(0, 0, 255, 100));
+
+	unique_ptr<b2Actor2D> Wheel = make_unique<b2Actor2D>(this, World.get(), "Wheel", EActorShapeType::EST_Circle, Eb2ShapeType::ECT_Circle, Vector2f(128.0f, 128.0f), Location, 0.0f, false, true);
+	Wheel->BindOnTick(WheelTick);
+	WheelCache = Wheel.get();
+	Setup(Wheel, Color(0, 255, 255, 40));
 }
 
 void Application::PivotTick(b2Actor2D* Actor)
 {
 	if (!Actor) return;
 
-	const float ElapsedTime = Actor->GetPackage()->GetTickHandle()->GetElapsedTime();
+	const float ElapsedTime = Actor->GetPackage()->GetTickHandle().GetElapsedTime();
 	const float cosfTime = cosf(ElapsedTime);
 	
 	const float deltaY = 3.0f * cosf(ElapsedTime) / 32.0f;

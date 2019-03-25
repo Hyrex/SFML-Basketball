@@ -3,11 +3,11 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <Box2D/Box2D.h>
+#include "TickHandle.h"
+#include "AssetLoader.h"
 
 #include "Defines.h"
 
-class FTickHandle;
-class FAssetLoader;
 class b2Actor2D;
 class b2Actor2DContactListener;
 
@@ -35,12 +35,15 @@ public:
 	void EndPlay();
 
 	b2World* GetWorld() const { return World.get(); }
-	FTickHandle* GetTickHandle() const { return TickHandle.get();  }
+	FTickHandle& GetTickHandle() { return TickHandle;  }
 
 private:
 
-	std::shared_ptr<FTickHandle> TickHandle;
-	std::shared_ptr<FAssetLoader> AssetLoader;
+	void MakeTrack();
+	void MakeProjector();
+
+	FTickHandle TickHandle;
+	FAssetLoader AssetLoader;
 	FRenderWindowData RenderWindowData;
 	SFML::RenderWindow AppWindow;
 
@@ -49,25 +52,29 @@ private:
 	//Box2D
 	b2Vec2 Gravity; 
 	std::shared_ptr<b2World> World;
-	std::shared_ptr<b2Actor2DContactListener> b2ActorContactListner;
+	std::unique_ptr<b2Actor2DContactListener> b2ActorContactListner;
 
-
-	std::vector<std::shared_ptr<SFML::Shape>> RenderShapes;
-	std::vector<std::shared_ptr<b2Actor2D>> b2Actors;
-	std::vector<std::shared_ptr<b2Actor2D>> BallPools_ThatStilLWork;
+	std::vector<std::unique_ptr<SFML::Shape>> RenderShapes;
+	std::vector<std::unique_ptr<b2Actor2D>> b2Actors;
+	std::vector<std::unique_ptr<b2Actor2D>> BallPools_ThatStilLWork;
 
 	SFML::Vertex AngleIndicators[2];
 
-	std::shared_ptr<SFML::RectangleShape> ChargeGaugeMax;		// Cached pointer, no need clear. Cleared via RenderShapes.
-	std::shared_ptr<SFML::RectangleShape> ChargeGaugeProgress;	// Cached pointer, no need clear. Cleared via RenderShapes.
 
 	bool bLeftMouseKeyDown = false;
 	bool bLeftMousePressed = false;
 	bool bRightMousePressed = false;
 	bool bMiddleMousePressed = false;
 
-	std::shared_ptr<b2Actor2D> PivotCache;		// Cached pointer, no need clear. Cleared via b2Actors.
-	std::shared_ptr<b2Actor2D> WheelCache;		// Cached pointer, no need clear. Cleared via b2Actors.
+	//////////////////////////////////////////
+	//		Cached Pointers
+	//////////////////////////////////////////
+
+	SFML::RectangleShape* ChargeGaugeMax;		// Cached pointer, no need clear. Cleared via RenderShapes.
+	SFML::RectangleShape* ChargeGaugeProgress;	// Cached pointer, no need clear. Cleared via RenderShapes.
+
+	b2Actor2D* PivotCache;		// Cached pointer, no need clear. Cleared via b2Actors.
+	b2Actor2D* WheelCache;		// Cached pointer, no need clear. Cleared via b2Actors.
 
 	static void PivotTick(b2Actor2D* Actor);
 	static void WheelTick(b2Actor2D* Actor);
