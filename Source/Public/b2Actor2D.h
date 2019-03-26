@@ -66,13 +66,14 @@ public:
 	virtual void Tick();
 	std::string		GetObjectName()			const	{ return ObjectName;  }
 	SFML::Shape*	GetShape()						{ return ObjectShapes.Get(); }
-	b2FixtureDef*	GetFixtureDefinition()			{ return FixtureDefinition.get(); }
+	b2FixtureDef*	GetFixtureDefinition()			{ if (FixtureDefinition) return FixtureDefinition.get(); else LOG("No BodyFixture"); }
 	
-	b2Body*			GetBodyInstance()		const	{ return BodyInstance; }
+	b2Body*			GetBodyInstance()				{ if (BodyInstance) return BodyInstance; else LOG("No BodyInstance"); }
 	Application*	GetPackage()			const	{ return Package; }
 	bool			IsDynamic()				const	{ return bIsDynamicObject; }
 
 	void SetInitLocation(b2Vec2 Location)			{ InitialPosition = Location; }
+	void SetInitLocation(SFML::Vector2f Location)	{ InitialPosition = b2Actor2D::Tob2Vec2Location(Location); }
 	void SetInitRotation(float Rotation)			{ InitialRotation = Rotation; }
 	void ResetToInitTransform();
 

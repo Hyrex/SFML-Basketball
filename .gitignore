@@ -9,6 +9,9 @@
 *.o
 *.obj
 *.log
+!*/vcxproj
+!*.filters
+!*.user
 !*.sln
 !*.dll
 !*.lib

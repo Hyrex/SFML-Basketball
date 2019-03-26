@@ -66,7 +66,7 @@ int Application::Initialize()
 		// Collapsed function body. Transfering ownership of local unique ptr to the container
 		auto b2ActorInit = [this](unique_ptr<b2Actor2D>& p, const Color c) ->void 
 		{
-			p->GetShape()->setOutlineThickness(-1); /// FIX ME : crash on line 139 lambda call
+			p->GetShape()->setOutlineThickness(-1);
 			p->GetShape()->setOutlineColor(Color::Black);
 			p->GetShape()->setFillColor(c);
 			b2Actors.push_back(move(p));
@@ -203,7 +203,6 @@ void Application::Tick(const float DeltaTime)
 		bLeftMousePressed = false;
 	}
 
-#if 0
 	// Right Click to Spawn Ball.
 	if (SFML::Mouse::isButtonPressed(SFML::Mouse::Right))
 	{
@@ -215,8 +214,6 @@ void Application::Tick(const float DeltaTime)
 				float velocity = 20.0f;
 
 				const SFML::Vector2f BallSpawnLocation(pivotX + 32.0f, pivotY - 32.0f);
-	
-				/// FIX ME CRASH HERE\
 
 				Fb2ActorSpawnParam SpawnParam;
 				SpawnParam.Package = this;
@@ -231,22 +228,23 @@ void Application::Tick(const float DeltaTime)
 				SpawnParam.bGenerateOverlaps = false;
 				SpawnParam.bAutoActivate = true;
 
-				//std::shared_ptr<b2Actor2D> Ball = BallPool->Spawn();
-				// Shared ptr issue with b2World make things crash.
+#if 1
 				std::unique_ptr<b2Actor2D> Ball = std::make_unique<b2Actor2D>(SpawnParam);
-				
-				//std::unique_ptr<b2Actor2D> Ball = std::make_unique<b2Actor2D>(this, World.get(), "Ball", EST_Circle, ECT_Circle, SFML::Vector2f(32, 32),
-				//	BallSpawnLocation, 0.0f, true, false, true); 
-				Ball->SetInitLocation(b2Actor2D::Tob2Vec2Location(BallSpawnLocation));
-				Ball->SetInitRotation(0);
+#elif
+				std::unique_ptr<b2Actor2D> Ball = 
+					std::make_unique<b2Actor2D>(this, World.get(), "Ball", EST_Circle, ECT_Circle, SFML::Vector2f(32, 32),
+					BallSpawnLocation, 0.0f, true, false, true); 
+#endif
+				Ball->SetInitLocation(BallSpawnLocation);
+				Ball->SetInitRotation(0.0f);
 				Ball->ResetToInitTransform();
-				Ball->GetShape()->setOutlineThickness(1);
 				Ball->GetShape()->setTexture(FAssetLoader::FindTexture(&AssetLoader, RESOURCES_TEXTURE_BASKETBALL));
+				//body instance crash.
 				Ball->GetBodyInstance()->SetLinearVelocity(b2Vec2(-velocity * sinf(-CurrentRotationAngle * 3.142f / 180.0f), +velocity * cosf(-CurrentRotationAngle * 3.142f / 180.0f)));
 				Ball->GetFixtureDefinition()->density = 0.83f;
 				Ball->GetFixtureDefinition()->friction = 0.4f;
 				Ball->GetFixtureDefinition()->restitution = 0.65f;
-				BallPools_ThatStilLWork.push_back(std::move(Ball));
+				b2Actors.push_back(std::move(Ball));
 			}
 			bRightMousePressed = true;
 		}
@@ -255,7 +253,6 @@ void Application::Tick(const float DeltaTime)
 	{
 		bRightMousePressed = false;
 	}
-#endif	
 
 
 	// Middle Button ： Reset

@@ -59,8 +59,15 @@ b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::str
 
 b2Actor2D::b2Actor2D(const Fb2ActorSpawnParam SpawnParam)
 {	
+	if (!SpawnParam.Package || !SpawnParam.WorldContext)
+	{
+		LOG("No Package or WorldContext while spawning b2Actor2D!");
+		return;
+	}
+
 	//Overloaded constructor.
-	b2Actor2D(SpawnParam.Package, SpawnParam.WorldContext, SpawnParam.Name, SpawnParam.ShapeType, SpawnParam.BodyType, SpawnParam.Size, SpawnParam.Location, SpawnParam.Rotation, SpawnParam.bIsDynamicBody, SpawnParam.bGenerateOverlaps, SpawnParam.bAutoActivate);
+	b2Actor2D(SpawnParam.Package, SpawnParam.WorldContext, SpawnParam.Name, SpawnParam.ShapeType, SpawnParam.BodyType, 
+		SpawnParam.Size, SpawnParam.Location, SpawnParam.Rotation, SpawnParam.bIsDynamicBody, SpawnParam.bGenerateOverlaps, SpawnParam.bAutoActivate);
 }
 
 b2Actor2D::~b2Actor2D() 
@@ -91,7 +98,8 @@ void b2Actor2D::ResetToInitTransform()
 	}
 	else
 	{
-		LOG("No BodyInstance Crash was here.");
+		LOG("No BodyInstance isn't created.");
+		LOG(" ");
 	}
 }
 
