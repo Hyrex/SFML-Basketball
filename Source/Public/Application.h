@@ -56,10 +56,9 @@ private:
 
 	std::vector<std::unique_ptr<SFML::Shape>> RenderShapes;
 	std::vector<std::unique_ptr<b2Actor2D>> b2Actors;
-	std::vector<std::unique_ptr<b2Actor2D>> BallPools_ThatStilLWork;
+	std::vector<std::unique_ptr<b2Actor2D>> Balls;
 
 	SFML::Vertex AngleIndicators[2];
-
 
 	bool bLeftMouseKeyDown = false;
 	bool bLeftMousePressed = false;

@@ -4,6 +4,21 @@
 
 b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::string Name, EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size, SFML::Vector2f Location, const float Rotation, const bool bIsDynamicBody, const bool bGenerateOverlaps, const bool bAutoActivate)
 {
+	Construct(Package, WorldContext, Name, ShapeType, BodyType, Size, Location, Rotation, bIsDynamicBody, bGenerateOverlaps, bAutoActivate);
+}
+
+b2Actor2D::b2Actor2D(const Fb2ActorSpawnParam SpawnParam)
+{	
+	Construct(SpawnParam.Package, SpawnParam.WorldContext, SpawnParam.Name, SpawnParam.ShapeType, SpawnParam.BodyType, 
+		SpawnParam.Size, SpawnParam.Location, SpawnParam.Rotation, SpawnParam.bIsDynamicBody, SpawnParam.bGenerateOverlaps, SpawnParam.bAutoActivate);
+}
+
+b2Actor2D::~b2Actor2D() 
+{
+}
+
+void b2Actor2D::Construct(Application * Package, b2World * WorldContext, const std::string Name, const EActorShapeType ShapeType, const Eb2ShapeType BodyType, SFML::Vector2f Size, SFML::Vector2f Location, const float Rotation, const bool bIsDynamicBody, const bool bGenerateOverlaps, const bool bAutoActivate)
+{
 	if (!Package) return;
 	if (!WorldContext) return;
 
@@ -12,10 +27,10 @@ b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::str
 	ObjectName = Name;
 	ObjectShapes.ShapeType = ShapeType;
 	CollisionType = BodyType;
-	
+
 	MakeShapeInstance(ShapeType);
 	ObjectShapeCache = ObjectShapes.Get();
-	SetShapeProperties(ShapeType,Size);
+	SetShapeProperties(ShapeType, Size);
 	if (ObjectShapes.Get())
 	{
 		ObjectShapes.Get()->setOrigin(Size * 0.5f);
@@ -24,7 +39,7 @@ b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::str
 		ObjectShapes.Get()->setOutlineColor(sf::Color::Black);
 	}
 
-	BodyDefinition = std::make_unique<b2BodyDef>(); 
+	BodyDefinition = std::make_unique<b2BodyDef>();
 	BodyDefinition->position = b2Vec2(Location.x / PIXEL_PER_METER, Location.y / PIXEL_PER_METER);
 	BodyDefinition->type = bIsDynamicBody ? b2_dynamicBody : b2_staticBody;
 
@@ -34,7 +49,7 @@ b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::str
 	MakeB2ShapeInstance(BodyType);
 	SetB2ShapeProperties(BodyType, Size);
 
-	if(BodyShape)
+	if (BodyShape)
 	{
 		FixtureDefinition = std::make_unique<b2FixtureDef>();
 		FixtureDefinition->shape = BodyShape.get();
@@ -43,7 +58,7 @@ b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::str
 		FixtureDefinition->restitution = 0.5f;
 		FixtureDefinition->isSensor = bGenerateOverlaps; // change it to MakeSensor and get data.
 	}
-	
+
 	BodyInstance = WorldContext->CreateBody(BodyDefinition.get());
 	BodyInstance->CreateFixture(FixtureDefinition.get());
 	BodyInstance->SetUserData(this);
@@ -55,23 +70,6 @@ b2Actor2D::b2Actor2D(Application* Package, b2World* WorldContext, const std::str
 	{
 		Activate();
 	}
-}
-
-b2Actor2D::b2Actor2D(const Fb2ActorSpawnParam SpawnParam)
-{	
-	if (!SpawnParam.Package || !SpawnParam.WorldContext)
-	{
-		LOG("No Package or WorldContext while spawning b2Actor2D!");
-		return;
-	}
-
-	//Overloaded constructor.
-	b2Actor2D(SpawnParam.Package, SpawnParam.WorldContext, SpawnParam.Name, SpawnParam.ShapeType, SpawnParam.BodyType, 
-		SpawnParam.Size, SpawnParam.Location, SpawnParam.Rotation, SpawnParam.bIsDynamicBody, SpawnParam.bGenerateOverlaps, SpawnParam.bAutoActivate);
-}
-
-b2Actor2D::~b2Actor2D() 
-{
 }
 
 void b2Actor2D::Tick()
@@ -139,6 +137,8 @@ void b2Actor2D::BindOnTick(void(*TickFunction)(b2Actor2D* Actor))
 {
 	TickCallback = TickFunction;
 }
+
+
 
 void b2Actor2D::MakeShapeInstance(const EActorShapeType ShapeType)
 {

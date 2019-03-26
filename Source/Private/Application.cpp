@@ -158,9 +158,9 @@ void Application::Tick(const float DeltaTime)
 		if (i) i->Tick();
 	}
 
-	//for (auto& i : BallPools_ThatStilLWork)
+	for (auto& i : Balls)
 	{
-		//if (i) i->Tick();
+		if (i) i->Tick();
 	}
 
 
@@ -228,23 +228,16 @@ void Application::Tick(const float DeltaTime)
 				SpawnParam.bGenerateOverlaps = false;
 				SpawnParam.bAutoActivate = true;
 
-#if 1
 				std::unique_ptr<b2Actor2D> Ball = std::make_unique<b2Actor2D>(SpawnParam);
-#elif
-				std::unique_ptr<b2Actor2D> Ball = 
-					std::make_unique<b2Actor2D>(this, World.get(), "Ball", EST_Circle, ECT_Circle, SFML::Vector2f(32, 32),
-					BallSpawnLocation, 0.0f, true, false, true); 
-#endif
 				Ball->SetInitLocation(BallSpawnLocation);
 				Ball->SetInitRotation(0.0f);
 				Ball->ResetToInitTransform();
 				Ball->GetShape()->setTexture(FAssetLoader::FindTexture(&AssetLoader, RESOURCES_TEXTURE_BASKETBALL));
-				//body instance crash.
 				Ball->GetBodyInstance()->SetLinearVelocity(b2Vec2(-velocity * sinf(-CurrentRotationAngle * 3.142f / 180.0f), +velocity * cosf(-CurrentRotationAngle * 3.142f / 180.0f)));
 				Ball->GetFixtureDefinition()->density = 0.83f;
 				Ball->GetFixtureDefinition()->friction = 0.4f;
 				Ball->GetFixtureDefinition()->restitution = 0.65f;
-				b2Actors.push_back(std::move(Ball));
+				Balls.push_back(std::move(Ball));
 			}
 			bRightMousePressed = true;
 		}
@@ -268,7 +261,7 @@ void Application::Tick(const float DeltaTime)
 			PivotCache->ResetToInitTransform();
 			WheelCache->ResetToInitTransform();
 
-			for (auto& i : BallPools_ThatStilLWork)
+			for (auto& i : Balls)
 			{
 				i->MakeInactive();
 			}
@@ -300,12 +293,8 @@ void Application::Tick(const float DeltaTime)
 	for (auto& Itr : b2Actors)
 		AppWindow.draw(*Itr->GetShape());
 
-	//for (auto Itr : BallPool->Actors)
-		//AppWindow.draw(*Itr->GetShape());
-
-	for (auto& Itr : BallPools_ThatStilLWork)
+	for (auto& Itr : Balls)
 		AppWindow.draw(*Itr->GetShape());
-
 
 	AppWindow.draw(AngleIndicators, 2, SFML::Lines);
 	AppWindow.display();
