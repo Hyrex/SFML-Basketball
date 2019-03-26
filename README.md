@@ -9,7 +9,7 @@ SFML Link : https://www.sfml-dev.org/
 
 SFML Version : v2.5.1
 
-SFML Build: Visual C++ 15 (2017) - 64-bit (Compatible with Box2D)
+SFML Build: Visual C++ 15 (2017)-64-bit (Compatible with Box2D)
 
 (SFML include location : C:/SFML-2.5.1-64-bit/includes) Folder renamed.
 
@@ -17,7 +17,7 @@ SFML Build: Visual C++ 15 (2017) - 64-bit (Compatible with Box2D)
 
 Box2D Link : https://github.com/erincatto/Box2D
 
-Follow the documentation and build Box2D.lib if you wish to rebuild. I have published the dependencies lib and setup. Remember to setup them again inside Solution Properties.
+There is an existing Box2D.lib submitted along the project. Follow the documentation and build Box2D.lib if you wish to rebuild. Remember to setup them again inside Solution Properties.
 
 You can only build x64 due to Box2D and SFML combined.
 
