@@ -5,7 +5,8 @@
 #include <Box2D/Box2D.h>
 #include "TickHandle.h"
 #include "AssetLoader.h"
-
+#include "GameState.h"
+#include "TextRenderer.h"
 #include "Defines.h"
 
 class b2Actor2D;
@@ -41,10 +42,13 @@ private:
 
 	void MakeTrack();
 	void MakeProjector();
+	void SetupText();
 	void SpawnBall();
 
 	FTickHandle TickHandle;
 	FAssetLoader AssetLoader;
+	FGameState GameState;
+	FTextRenderer TextRenderer;
 
 	FRenderWindowData RenderWindowData;
 	SFML::RenderWindow AppWindow;
@@ -77,9 +81,17 @@ private:
 	b2Actor2D* PivotCache;		// Cached pointer, no need clear. Cleared via b2Actors.
 	b2Actor2D* WheelCache;		// Cached pointer, no need clear. Cleared via b2Actors.
 
+	FTextData* LevelTextCache;
+	FTextData* ScoreCache;
+	FTextData* HiScoreCache;
+	FTextData* BallCountCache;
+	FTextData* CountdownTimeCache;
+	FTextData* ElapsedTimeCache;
+
 	static void PivotTick(b2Actor2D* Actor);
 	static void WheelTick(b2Actor2D* Actor);
 	static void BallTick(b2Actor2D* Actor);
+	static void SensorOverlap(b2Actor2D* OverlapActor);
 
 
 	//

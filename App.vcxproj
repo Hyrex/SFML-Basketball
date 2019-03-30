@@ -152,6 +152,9 @@
     <ClInclude Include="Source\Public\AssetLoader.h" />
     <ClInclude Include="Source\Public\b2Actor2D.h" />
     <ClInclude Include="Source\Public\Defines.h" />
+    <ClInclude Include="Source\Public\GameState.h" />
+    <ClInclude Include="Source\Public\Interface.h" />
+    <ClInclude Include="Source\Public\TextRenderer.h" />
     <ClInclude Include="Source\Public\TickHandle.h" />
   </ItemGroup>
   <ItemGroup>
@@ -159,7 +162,9 @@
     <ClCompile Include="Source\Private\AssetLoader.cpp" />
     <ClCompile Include="Source\Private\b2Actor2D.cpp" />
     <ClCompile Include="Source\Private\b2Actor2DContactListener.cpp" />
+    <ClCompile Include="Source\Private\GameState.cpp" />
     <ClCompile Include="Source\Private\main.cpp" />
+    <ClCompile Include="Source\Private\TextRenderer.cpp" />
     <ClCompile Include="Source\Private\TickHandle.cpp" />
   </ItemGroup>
   <ItemGroup>

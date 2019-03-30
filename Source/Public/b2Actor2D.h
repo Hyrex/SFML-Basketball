@@ -2,6 +2,7 @@
 #include <SFML\Graphics.hpp>
 #include <Box2D/Box2D.h>
 #include "Defines.h"
+#include "Interface.h"
 
 static const float PIXEL_PER_METER = 32.0f;
 class Application;
@@ -55,7 +56,7 @@ struct Fb2ActorSpawnParam
 	bool bAutoActivate;
 };
 
-class b2Actor2D
+class b2Actor2D : public ITickable
 {
 public:
 
@@ -63,7 +64,7 @@ public:
 	b2Actor2D(const Fb2ActorSpawnParam SpawnParam);
 	~b2Actor2D();
 
-	virtual void Tick();
+	virtual void Tick() override;
 	std::string		GetObjectName()			const	{ return ObjectName;  }
 	SFML::Shape*	GetShape()						{ return ObjectShapes.Get(); }
 	b2FixtureDef*	GetFixtureDefinition()			{ if (FixtureDefinition) return FixtureDefinition.get(); else LOG("No BodyFixture"); return nullptr; }

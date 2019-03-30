@@ -41,6 +41,15 @@
     <ClInclude Include="Source\Public\b2Actor2D.h">
       <Filter>Source\Public\GameObject</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Public\TextRenderer.h">
+      <Filter>Source\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Public\Interface.h">
+      <Filter>Source\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Public\GameState.h">
+      <Filter>Source\Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Private\Application.cpp">
@@ -60,6 +69,12 @@
     </ClCompile>
     <ClCompile Include="Source\Private\b2Actor2DContactListener.cpp">
       <Filter>Source\Private\GameObject</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Private\TextRenderer.cpp">
+      <Filter>Source\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Private\GameState.cpp">
+      <Filter>Source\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

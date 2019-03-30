@@ -1,11 +1,12 @@
 #pragma once
 #include <SFML/System.hpp>
-#include "Defines.h"
 #include <ctime>
+#include "Defines.h"
+#include "Interface.h"
 
 class Application;
 
-class FTickHandle
+class FTickHandle : public ITickable
 {
 public:
 	FTickHandle();
@@ -21,7 +22,7 @@ public:
 	void BeginTick();
 
 	/* Tick body */
-	void Tick();
+	virtual void Tick() override;
 
 	/* Handle Finalization after last Tick called.*/
 	void EndTick();

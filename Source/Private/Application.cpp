@@ -33,6 +33,8 @@ int Application::Initialize()
 
 	bool bInitChecks = true;
 	bInitChecks &= TickHandle.BindApplication(this);
+	bInitChecks &= GameState.BindApplication(this);
+	bInitChecks &= TextRenderer.BindApplication(this);
 	bInitChecks &= AssetLoader.LoadResources();
 
 	if (bInitChecks)
@@ -128,10 +130,12 @@ int Application::Initialize()
 		const Vector2f sensorPos((boardPos.x + netEdgePos.x) / 2, netEdgePos.y);
 		
 		unique_ptr<b2Actor2D> ScoreSensor = make_unique<b2Actor2D>(this, World.get(), "sensor", EActorShapeType::EST_Circle, Eb2ShapeType::ECT_Circle, sensorSize, sensorPos, 0.0f, false, true);
+		ScoreSensor->BindOnBeginoverlap(SensorOverlap);
 		b2ActorInit(ScoreSensor, Color(255, 255, 0, 100));
 
 		MakeTrack();
 		MakeProjector();
+		SetupText();
 	}
 
 	return bInitChecks;
@@ -150,17 +154,21 @@ void Application::Tick(const float DeltaTime)
 		}
 	}
 
+	GameState.Tick();
+	TextRenderer.Tick();
+
 	for (auto& i : b2Actors)
-	{
 		if (i) i->Tick();
-	}
-
+	
 	for (auto& i : Balls)
-	{
 		if (i) i->Tick();
-	}
-
-	LOG_CMD(Balls.size());
+	
+	LevelTextCache->Text.setString("LEVEL\n" + GameState.GetLevelString());
+	ScoreCache->Text.setString("SCORE\n" + GameState.GetScoreString());
+	HiScoreCache->Text.setString("HISCORE\n" + GameState.GetHiScoreString());
+	BallCountCache->Text.setString("REQ. BALL\n" + GameState.GetReqBallString());
+	CountdownTimeCache->Text.setString("REMAINING TIME\n" + GameState.GetRemainingTimeString() + " S");
+	ElapsedTimeCache->Text.setString("ELAPSED MIN\n" + GameState.GetElapsedTimeMinString() + " M" + GameState.GetElapsedTimeSecondString() + " S");
 
 	// Left Click to Start Game, Press for Charge Velocity, Release for Discharge Velocity
 	if (SFML::Mouse::isButtonPressed(SFML::Mouse::Left))
@@ -168,21 +176,20 @@ void Application::Tick(const float DeltaTime)
 		bLeftMouseKeyDown = true;
 		if (!bLeftMousePressed)
 		{
-			//if (!MGameData.getGameStartFlag())
-			//	MGameData.setGameStartFlag(true);
-
+			GameState.StartGame();
 			bLeftMousePressed = true;
 		}
+		
 
 		//If the game already Started, Do something else.
-		//if (MGameData.getGameStartFlag())
-		//{
-		//	MGameData.chargeVelocity(deltaTime);
-		//}
+		if (GameState.GetIsGameStarted())
+		{
+			GameState.ChargeProjectionVelocity();
+		}
 	}
 	else
 	{
-		//MGameData.dischargeVelocity(deltaTime);
+		GameState.DischargeProjectionVelocity();
 		bLeftMouseKeyDown = false;
 		bLeftMousePressed = false;
 	}
@@ -192,7 +199,7 @@ void Application::Tick(const float DeltaTime)
 	{
 		if (!bRightMousePressed)
 		{
-			//if (!MGameData.getGameOverFlag())
+			if (!GameState.GetIsGameOver())
 			{
 				SpawnBall();
 			}
@@ -210,18 +217,15 @@ void Application::Tick(const float DeltaTime)
 	{
 		if (!bMiddleMousePressed)
 		{
-			//MGameData.reset();
-
-			// Prevent accumulative cosine input.
 			bMiddleMousePressed = true;
+
+			GameState.ResetValues();
 			TickHandle.ClearTimer();
 			PivotCache->ResetToInitTransform();
 			WheelCache->ResetToInitTransform();
 
 			for (auto& i : Balls)
-			{
 				i->MakeInactive();
-			}
 		}
 	}
 	else
@@ -231,13 +235,14 @@ void Application::Tick(const float DeltaTime)
 
 	// Update Info Gauge
 	float maxVelocity = 60.0f;
-	float percentage = 0;// MGameData.getChargeVelocity() / maxVelocity;
+	float percentage = GameState.GetChargedBallVelocity() / maxVelocity;
 
 	const SFML::Vector2f PivotLocation = PivotCache->GetLocation();
 	const SFML::Vector2f MouseLocation = SFML::Vector2f(SFML::Mouse::getPosition(AppWindow));
 	const SFML::Vector2f OffsetMouseLocation = SFML::Vector2f(SFML::Mouse::getPosition(AppWindow) - SFML::Vector2i(16, 16));
 
 	ChargeGaugeMax->setPosition(OffsetMouseLocation);
+	ChargeGaugeMax->setSize(SFML::Vector2f(160.0f, 8.0f));
 	ChargeGaugeProgress->setPosition(OffsetMouseLocation);
 	ChargeGaugeProgress->setSize(SFML::Vector2f(160.0f * percentage, 8.0f));;
 
@@ -256,6 +261,13 @@ void Application::Tick(const float DeltaTime)
 
 	for (auto& Itr : Balls)
 		AppWindow.draw(*Itr->GetShape());
+
+	for (auto& Itr : TextRenderer.GetTextData())
+	{
+		if(Itr->bIsActive)
+			AppWindow.draw(Itr->Text);
+	}
+		
 
 	AppWindow.draw(AngleIndicators, 2, SFML::Lines);
 	AppWindow.display();
@@ -326,6 +338,60 @@ void Application::MakeProjector()
 	Setup(Wheel, Color(0, 255, 255, 40));
 }
 
+void Application::SetupText()
+{
+	const float Unit = 32.0f;
+	const float LineY1 = 530;
+	const float LineY2 = 620;
+	std::unique_ptr<FTextData> t1 = std::make_unique<FTextData>();
+	t1->StartLocation = SFML::Vector2f(80, LineY1);
+	t1->Text.setCharacterSize(30);
+	t1->Font = FAssetLoader::FindFont(&AssetLoader, RESOURCES_FONT_CHALK);
+	t1->Init();
+	LevelTextCache = t1.get();
+	TextRenderer.Add(t1);
+
+	std::unique_ptr<FTextData> t2 = std::make_unique<FTextData>();
+	t2->StartLocation = SFML::Vector2f(80, LineY2);
+	t2->Text.setCharacterSize(30);
+	t2->Font = FAssetLoader::FindFont(&AssetLoader, RESOURCES_FONT_CHALK);
+	t2->Init();
+	ScoreCache = t2.get();
+	TextRenderer.Add(t2);
+
+	std::unique_ptr<FTextData> t3 = std::make_unique<FTextData>();
+	t3->StartLocation = SFML::Vector2f(768, LineY1);
+	t3->Text.setCharacterSize(30);
+	t3->Font = FAssetLoader::FindFont(&AssetLoader, RESOURCES_FONT_CHALK);
+	t3->Init();
+	HiScoreCache = t3.get();
+	TextRenderer.Add(t3);
+
+	std::unique_ptr<FTextData> t4 = std::make_unique<FTextData>();
+	t4->StartLocation = SFML::Vector2f(768, LineY2);
+	t4->Text.setCharacterSize(30);
+	t4->Font = FAssetLoader::FindFont(&AssetLoader, RESOURCES_FONT_CHALK);
+	t4->Init();
+	BallCountCache = t4.get();
+	TextRenderer.Add(t4);
+
+	std::unique_ptr<FTextData> t5 = std::make_unique<FTextData>();
+	t5->StartLocation = SFML::Vector2f(368, LineY1);
+	t5->Text.setCharacterSize(30);
+	t5->Font = FAssetLoader::FindFont(&AssetLoader, RESOURCES_FONT_CHALK);
+	t5->Init();
+	CountdownTimeCache = t5.get();
+	TextRenderer.Add(t5);
+
+	std::unique_ptr<FTextData> t6 = std::make_unique<FTextData>();
+	t6->StartLocation = SFML::Vector2f(368, LineY2);
+	t6->Text.setCharacterSize(30);
+	t6->Font = FAssetLoader::FindFont(&AssetLoader, RESOURCES_FONT_CHALK);
+	t6->Init();
+	ElapsedTimeCache = t6.get();
+	TextRenderer.Add(t6);
+}
+
 void Application::SpawnBall()
 {
 	const SFML::Vector2f PivotLocation = PivotCache->GetLocation();
@@ -336,8 +402,7 @@ void Application::SpawnBall()
 	const float dy = MouseLocation.y - PivotLocation.y;
 	const float CurrentRotationAngle = (atan2(dy, dx)) * 180.0f / 3.142f;
 
-	//	float velocity = MGameData.getChargeVelocity();
-	float velocity = 20.0f;
+	const float velocity = GameState.GetChargedBallVelocity();
 
 	const SFML::Vector2f BallSpawnLocation(PivotLocation + SFML::Vector2f(32, 32));
 
@@ -380,6 +445,7 @@ void Application::SpawnBall()
 		Ball->GetFixtureDefinition()->friction = 0.4f;
 		Ball->GetFixtureDefinition()->restitution = 0.65f;
 		Ball->BindOnTick(BallTick);
+		//Ball->BindOnBeginoverlap(BallOverlap);
 		Balls.push_back(std::move(Ball));
 	}
 }
@@ -416,5 +482,13 @@ void Application::BallTick(b2Actor2D* Actor)
 	if (Ax || Bx || Ay || By)
 	{
 		Actor->MakeInactive();
+	}
+}
+
+void Application::SensorOverlap(b2Actor2D* OverlapActor)
+{
+	if (OverlapActor->GetObjectName() == "Ball")
+	{
+		OverlapActor->GetPackage()->GameState.ScoreBall();
 	}
 }

@@ -28,3 +28,4 @@
 #define RESOURCES_TEXTURE_WOOD				"Resources/wood.jpg"
 #define RESOURCES_TEXTURE_BOXALT			"Resources/boxAlt.png"
 #define RESOURCES_AUDIO_TROLOLO				"Resources/Mr.ogg"
+
