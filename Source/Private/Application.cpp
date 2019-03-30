@@ -4,19 +4,16 @@
 #include "b2Actor2D.h"
 #include "b2Actor2DContactListener.h"
 
-
 Application::Application()
 {
-	b2ActorContactListner = std::unique_ptr<b2Actor2DContactListener>();
+	b2ActorContactListner = std::make_unique<b2Actor2DContactListener>();
 
 	Gravity = b2Vec2(0.f, 9.81f);
 	World = std::make_shared<b2World>(Gravity);
 	World->SetContactListener(b2ActorContactListner.get());
 }
 
-Application::~Application()
-{
-}
+Application::~Application() {}
 
 void Application::BeginPlay()
 {
@@ -163,20 +160,7 @@ void Application::Tick(const float DeltaTime)
 		if (i) i->Tick();
 	}
 
-
-	// Update Pivot Position, Mouse Position
-	// Dirty implementation, tick for-loop.
-	const float pivotX = PivotCache->GetBodyInstance()->GetPosition().x *32.0f;
-	const float pivotY = PivotCache->GetBodyInstance()->GetPosition().y *32.0f;
-	const SFML::Vector2f CurrentPivotLocation(pivotX, pivotY);
-	
-	const SFML::Vector2f MouseLocation = SFML::Vector2f(SFML::Mouse::getPosition(AppWindow));
-	const SFML::Vector2f offsetMousePos = SFML::Vector2f(MouseLocation.x - 16.0f, MouseLocation.y - 16.0f);
-
-	// Update Rotation Angle
-	const float dx = MouseLocation.x - CurrentPivotLocation.x;
-	const float dy = MouseLocation.y - CurrentPivotLocation.y;
-	const float CurrentRotationAngle = (atan2(dy, dx)) * 180.0f / 3.142f;
+	LOG_CMD(Balls.size());
 
 	// Left Click to Start Game, Press for Charge Velocity, Release for Discharge Velocity
 	if (SFML::Mouse::isButtonPressed(SFML::Mouse::Left))
@@ -210,34 +194,7 @@ void Application::Tick(const float DeltaTime)
 		{
 			//if (!MGameData.getGameOverFlag())
 			{
-			//	float velocity = MGameData.getChargeVelocity();
-				float velocity = 20.0f;
-
-				const SFML::Vector2f BallSpawnLocation(pivotX + 32.0f, pivotY - 32.0f);
-
-				Fb2ActorSpawnParam SpawnParam;
-				SpawnParam.Package = this;
-				SpawnParam.WorldContext = World.get();
-				SpawnParam.Name = "Ball";
-				SpawnParam.ShapeType = EActorShapeType::EST_Circle;
-				SpawnParam.BodyType = Eb2ShapeType::ECT_Circle;
-				SpawnParam.Size = SFML::Vector2f(32, 32);
-				SpawnParam.Location = BallSpawnLocation;
-				SpawnParam.Rotation = 0.0f;
-				SpawnParam.bIsDynamicBody = true;
-				SpawnParam.bGenerateOverlaps = false;
-				SpawnParam.bAutoActivate = true;
-
-				std::unique_ptr<b2Actor2D> Ball = std::make_unique<b2Actor2D>(SpawnParam);
-				Ball->SetInitLocation(BallSpawnLocation);
-				Ball->SetInitRotation(0.0f);
-				Ball->ResetToInitTransform();
-				Ball->GetShape()->setTexture(FAssetLoader::FindTexture(&AssetLoader, RESOURCES_TEXTURE_BASKETBALL));
-				Ball->GetBodyInstance()->SetLinearVelocity(b2Vec2(-velocity * sinf(-CurrentRotationAngle * 3.142f / 180.0f), +velocity * cosf(-CurrentRotationAngle * 3.142f / 180.0f)));
-				Ball->GetFixtureDefinition()->density = 0.83f;
-				Ball->GetFixtureDefinition()->friction = 0.4f;
-				Ball->GetFixtureDefinition()->restitution = 0.65f;
-				Balls.push_back(std::move(Ball));
+				SpawnBall();
 			}
 			bRightMousePressed = true;
 		}
@@ -276,12 +233,16 @@ void Application::Tick(const float DeltaTime)
 	float maxVelocity = 60.0f;
 	float percentage = 0;// MGameData.getChargeVelocity() / maxVelocity;
 
-	ChargeGaugeMax->setPosition(offsetMousePos);
-	ChargeGaugeProgress->setPosition(offsetMousePos);
+	const SFML::Vector2f PivotLocation = PivotCache->GetLocation();
+	const SFML::Vector2f MouseLocation = SFML::Vector2f(SFML::Mouse::getPosition(AppWindow));
+	const SFML::Vector2f OffsetMouseLocation = SFML::Vector2f(SFML::Mouse::getPosition(AppWindow) - SFML::Vector2i(16, 16));
+
+	ChargeGaugeMax->setPosition(OffsetMouseLocation);
+	ChargeGaugeProgress->setPosition(OffsetMouseLocation);
 	ChargeGaugeProgress->setSize(SFML::Vector2f(160.0f * percentage, 8.0f));;
-	
+
 	// Update Angle Indicator
-	AngleIndicators[0].position = CurrentPivotLocation;
+	AngleIndicators[0].position = PivotLocation;
 	AngleIndicators[1].position = MouseLocation;
 
 	// Rendering
@@ -303,7 +264,6 @@ void Application::Tick(const float DeltaTime)
 void Application::EndPlay()
 {
 	TickHandle.EndTick();
-	AssetLoader.UnloadResources();
 }
 
 void Application::MakeTrack()
@@ -366,6 +326,64 @@ void Application::MakeProjector()
 	Setup(Wheel, Color(0, 255, 255, 40));
 }
 
+void Application::SpawnBall()
+{
+	const SFML::Vector2f PivotLocation = PivotCache->GetLocation();
+	const SFML::Vector2f MouseLocation = SFML::Vector2f(SFML::Mouse::getPosition(AppWindow));
+
+	// Update Rotation Angle
+	const float dx = MouseLocation.x - PivotLocation.x;
+	const float dy = MouseLocation.y - PivotLocation.y;
+	const float CurrentRotationAngle = (atan2(dy, dx)) * 180.0f / 3.142f;
+
+	//	float velocity = MGameData.getChargeVelocity();
+	float velocity = 20.0f;
+
+	const SFML::Vector2f BallSpawnLocation(PivotLocation + SFML::Vector2f(32, 32));
+
+	// Construct data to parse.
+	Fb2ActorSpawnParam SpawnParam;
+	SpawnParam.Package = this;
+	SpawnParam.WorldContext = World.get();
+	SpawnParam.Name = "Ball";
+	SpawnParam.ShapeType = EActorShapeType::EST_Circle;
+	SpawnParam.BodyType = Eb2ShapeType::ECT_Circle;
+	SpawnParam.Size = SFML::Vector2f(32, 32);
+	SpawnParam.Location = BallSpawnLocation;
+	SpawnParam.Rotation = 0.0f;
+	SpawnParam.bIsDynamicBody = true;
+	SpawnParam.bGenerateOverlaps = false;
+	SpawnParam.bAutoActivate = true;
+
+	auto FindPredicate = [](auto& P)->bool { return !P->IsActive(); };
+	auto pActor = std::find_if(Balls.begin(), Balls.end(), FindPredicate);
+
+	// If found
+	if (pActor != Balls.end())
+	{
+		b2Actor2D* const ReuseBall = (*pActor) ? (*pActor).get() : nullptr;
+		if (ReuseBall)
+		{
+			ReuseBall->GetBodyInstance()->SetLinearVelocity(b2Vec2(-velocity * sinf(-CurrentRotationAngle * 3.142f / 180.0f), +velocity * cosf(-CurrentRotationAngle * 3.142f / 180.0f)));
+			ReuseBall->SetInitTransform(SpawnParam.Location, SpawnParam.Rotation);
+			ReuseBall->ResetToInitTransform();
+			ReuseBall->Activate();
+		}
+	}
+	else
+	{
+		// Construct new.
+		std::unique_ptr<b2Actor2D> Ball = std::make_unique<b2Actor2D>(SpawnParam);
+		Ball->GetShape()->setTexture(FAssetLoader::FindTexture(&AssetLoader, RESOURCES_TEXTURE_BASKETBALL));
+		Ball->GetBodyInstance()->SetLinearVelocity(b2Vec2(-velocity * sinf(-CurrentRotationAngle * 3.142f / 180.0f), +velocity * cosf(-CurrentRotationAngle * 3.142f / 180.0f)));
+		Ball->GetFixtureDefinition()->density = 0.83f;
+		Ball->GetFixtureDefinition()->friction = 0.4f;
+		Ball->GetFixtureDefinition()->restitution = 0.65f;
+		Ball->BindOnTick(BallTick);
+		Balls.push_back(std::move(Ball));
+	}
+}
+
 void Application::PivotTick(b2Actor2D* Actor)
 {
 	if (!Actor) return;
@@ -384,4 +402,19 @@ void Application::WheelTick(b2Actor2D* Actor)
 
 	b2Vec2 PivotLocation = Actor->GetPackage()->PivotCache->GetBodyInstance()->GetPosition();
 	Actor->GetBodyInstance()->SetTransform(PivotLocation, Actor->GetBodyInstance()->GetAngle());
+}
+
+void Application::BallTick(b2Actor2D* Actor)
+{
+	if (!Actor) return;
+
+	const bool Ax = Actor->GetLocation().x >= Actor->GetPackage()->RenderWindowData.Width + 64.0f;
+	const bool Bx = Actor->GetLocation().x <= -64.0f;
+	const bool Ay = Actor->GetLocation().y >= Actor->GetPackage()->RenderWindowData.Height + 64.0f;
+	const bool By = Actor->GetLocation().y <= -64.0f;
+
+	if (Ax || Bx || Ay || By)
+	{
+		Actor->MakeInactive();
+	}
 }

@@ -88,6 +88,7 @@ void b2Actor2D::Tick()
 	}
 }
 
+
 void b2Actor2D::ResetToInitTransform()
 {
 	if (BodyInstance)
@@ -137,8 +138,6 @@ void b2Actor2D::BindOnTick(void(*TickFunction)(b2Actor2D* Actor))
 {
 	TickCallback = TickFunction;
 }
-
-
 
 void b2Actor2D::MakeShapeInstance(const EActorShapeType ShapeType)
 {

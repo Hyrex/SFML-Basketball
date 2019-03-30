@@ -27,7 +27,7 @@ class Application
 {
 public:
 	Application();
-	~Application();
+	~Application();;
 
 	int Initialize();
 	void BeginPlay();
@@ -41,9 +41,11 @@ private:
 
 	void MakeTrack();
 	void MakeProjector();
+	void SpawnBall();
 
 	FTickHandle TickHandle;
 	FAssetLoader AssetLoader;
+
 	FRenderWindowData RenderWindowData;
 	SFML::RenderWindow AppWindow;
 
@@ -77,6 +79,7 @@ private:
 
 	static void PivotTick(b2Actor2D* Actor);
 	static void WheelTick(b2Actor2D* Actor);
+	static void BallTick(b2Actor2D* Actor);
 
 
 	//

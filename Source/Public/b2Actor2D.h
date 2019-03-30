@@ -66,15 +66,18 @@ public:
 	virtual void Tick();
 	std::string		GetObjectName()			const	{ return ObjectName;  }
 	SFML::Shape*	GetShape()						{ return ObjectShapes.Get(); }
-	b2FixtureDef*	GetFixtureDefinition()			{ if (FixtureDefinition) return FixtureDefinition.get(); else LOG("No BodyFixture"); }
+	b2FixtureDef*	GetFixtureDefinition()			{ if (FixtureDefinition) return FixtureDefinition.get(); else LOG("No BodyFixture"); return nullptr; }
 	
-	b2Body*			GetBodyInstance()				{ if (BodyInstance) return BodyInstance; else LOG("No BodyInstance"); }
+	b2Body*			GetBodyInstance()				{ if (BodyInstance) return BodyInstance; else LOG("No BodyInstance"); return nullptr; }
 	Application*	GetPackage()			const	{ return Package; }
 	bool			IsDynamic()				const	{ return bIsDynamicObject; }
+	bool			IsActive()				const	{ return bIsActive; }
 
-	void SetInitLocation(b2Vec2 Location)			{ InitialPosition = Location; }
-	void SetInitLocation(SFML::Vector2f Location)	{ InitialPosition = b2Actor2D::Tob2Vec2Location(Location); }
-	void SetInitRotation(float Rotation)			{ InitialRotation = Rotation; }
+	const SFML::Vector2f&	GetLocation()			{ return ObjectShapes.Get()->getPosition(); }
+	void SetInitTransform(SFML::Vector2f Location, float Rotation)	{ SetInitLocation(Location); SetInitRotation(Rotation); }
+	void SetInitLocation(b2Vec2 Location)							{ InitialPosition = Location; }
+	void SetInitLocation(SFML::Vector2f Location)					{ InitialPosition = b2Actor2D::Tob2Vec2Location(Location); }
+	void SetInitRotation(float Rotation)							{ InitialRotation = Rotation; }
 	void ResetToInitTransform();
 
 	void BeginOverlap(b2Actor2D* OverlappedActor);

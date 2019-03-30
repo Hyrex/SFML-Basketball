@@ -33,9 +33,9 @@ void FTickHandle::Tick()
 	if (TimeElapsedSinceLastFrame >= DELTA_TIME_STEP)
 	{
 		// Step is used to update physics position/rotation
-		ContextObject->GetWorld()->Step(DELTA_TIME_STEP, //update frequency
-			8,                //velocityIterations
-			3                 //positionIterations  
+		ContextObject->GetWorld()->Step(DELTA_TIME_STEP,	//update frequency
+			8,												//velocityIterations
+			3												//positionIterations  
 		);
 
 		ContextObject->Tick(DELTA_TIME_STEP);
