@@ -70,6 +70,13 @@ void b2Actor2D::Construct(Application * Package, b2World * WorldContext, const s
 	{
 		Activate();
 	}
+
+	// Debug!
+	DebugForward = std::make_unique<SFML::RectangleShape>();
+	DebugForward->setOrigin(Size * 0.5f);
+	DebugForward->setSize(SFML::Vector2f(Size.x + 20.0f, 5));
+	DebugForward->setFillColor(SFML::Color(255, 0, 0, 255));
+
 }
 
 void b2Actor2D::Tick()
@@ -80,6 +87,8 @@ void b2Actor2D::Tick()
 		// Snap rendering according to Box2D BodyInstance.
 		ObjectShapes.Get()->setRotation(BodyInstance->GetAngle() * 180 / b2_pi);
 		ObjectShapes.Get()->setPosition(BodyInstance->GetPosition().x*PIXEL_PER_METER, BodyInstance->GetPosition().y*PIXEL_PER_METER);
+		DebugForward->setRotation(BodyInstance->GetAngle() * 180 / b2_pi);
+		DebugForward->setPosition(BodyInstance->GetPosition().x*PIXEL_PER_METER, BodyInstance->GetPosition().y*PIXEL_PER_METER);
 
 		if (TickCallback != 0)
 		{

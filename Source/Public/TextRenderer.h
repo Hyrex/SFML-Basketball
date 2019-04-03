@@ -16,6 +16,7 @@ public:
 	SFML::Font* Font;
 	std::string TextData			= "NO TEXT";
 	bool bIsActive					= true;
+	bool bIsPaused					= false;
 	bool bIsPersistance				= true;
 
 	void Init()
@@ -23,6 +24,16 @@ public:
 		Text.setString(TextData);
 		Text.setPosition(StartLocation);
 		Text.setFont(*Font);
+		LifeTime = 0.0f;
+
+		// Restore alpha
+		SFML::Color DefaultFillColor = Text.getFillColor();
+		DefaultFillColor.a = 255;
+		Text.setFillColor(DefaultFillColor);
+
+		SFML::Color DefaultOutlineColor = Text.getOutlineColor();
+		DefaultOutlineColor.a = 255;
+		Text.setOutlineColor(DefaultOutlineColor);
 	}
 };
 

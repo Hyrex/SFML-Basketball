@@ -11,6 +11,7 @@ class FGameState : ITickable
 {
 public:
 	
+	FGameState();
 	void ResetValues();
 	void ChargeProjectionVelocity();
 	void DischargeProjectionVelocity();
@@ -18,6 +19,7 @@ public:
 	virtual void Tick() override;
 
 	void StartGame();
+	void ResetGame();
 	void ScoreBall()						{ Score++; }
 
 	int GetScore()					const	{ return Score; }
@@ -44,6 +46,8 @@ public:
 
 private:
 
+	float GetTimeIncreament(const int CurrentLevel);
+	int GetRequirementBallCount(const int RequiredBallCount);
 	int Score;
 	int HiScore;
 	int Level;

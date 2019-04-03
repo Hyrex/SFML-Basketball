@@ -66,8 +66,6 @@ private:
 
 	SFML::Vertex AngleIndicators[2];
 
-	bool bLeftMouseKeyDown = false;
-	bool bLeftMousePressed = false;
 	bool bRightMousePressed = false;
 	bool bMiddleMousePressed = false;
 
@@ -87,6 +85,7 @@ private:
 	FTextData* BallCountCache;
 	FTextData* CountdownTimeCache;
 	FTextData* ElapsedTimeCache;
+	FTextData* CenterTextCache;
 
 	static void PivotTick(b2Actor2D* Actor);
 	static void WheelTick(b2Actor2D* Actor);

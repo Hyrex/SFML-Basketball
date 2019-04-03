@@ -163,6 +163,7 @@ void Application::Tick(const float DeltaTime)
 	for (auto& i : Balls)
 		if (i) i->Tick();
 	
+	// Need to update on tick.
 	LevelTextCache->Text.setString("LEVEL\n" + GameState.GetLevelString());
 	ScoreCache->Text.setString("SCORE\n" + GameState.GetScoreString());
 	HiScoreCache->Text.setString("HISCORE\n" + GameState.GetHiScoreString());
@@ -170,67 +171,70 @@ void Application::Tick(const float DeltaTime)
 	CountdownTimeCache->Text.setString("REMAINING TIME\n" + GameState.GetRemainingTimeString() + " S");
 	ElapsedTimeCache->Text.setString("ELAPSED MIN\n" + GameState.GetElapsedTimeMinString() + " M" + GameState.GetElapsedTimeSecondString() + " S");
 
-	// Left Click to Start Game, Press for Charge Velocity, Release for Discharge Velocity
-	if (SFML::Mouse::isButtonPressed(SFML::Mouse::Left))
+	if (AppWindow.hasFocus())
 	{
-		bLeftMouseKeyDown = true;
-		if (!bLeftMousePressed)
+		if (SFML::Keyboard::isKeyPressed(SFML::Keyboard::Space))
 		{
-			GameState.StartGame();
-			bLeftMousePressed = true;
-		}
-		
-
-		//If the game already Started, Do something else.
-		if (GameState.GetIsGameStarted())
-		{
-			GameState.ChargeProjectionVelocity();
-		}
-	}
-	else
-	{
-		GameState.DischargeProjectionVelocity();
-		bLeftMouseKeyDown = false;
-		bLeftMousePressed = false;
-	}
-
-	// Right Click to Spawn Ball.
-	if (SFML::Mouse::isButtonPressed(SFML::Mouse::Right))
-	{
-		if (!bRightMousePressed)
-		{
-			if (!GameState.GetIsGameOver())
+			if (!GameState.GetIsGameStarted())
 			{
-				SpawnBall();
+				GameState.StartGame();
+				CenterTextCache->bIsPaused = false;
 			}
-			bRightMousePressed = true;
 		}
-	}
-	else
-	{
-		bRightMousePressed = false;
-	}
 
-
-	// Middle Button ： Reset
-	if (SFML::Mouse::isButtonPressed(SFML::Mouse::Middle))
-	{
-		if (!bMiddleMousePressed)
+		if (SFML::Mouse::isButtonPressed(SFML::Mouse::Left))
 		{
-			bMiddleMousePressed = true;
 
-			GameState.ResetValues();
-			TickHandle.ClearTimer();
-			PivotCache->ResetToInitTransform();
-			WheelCache->ResetToInitTransform();
-
-			for (auto& i : Balls)
-				i->MakeInactive();
+			//If the game already Started, Do something else.
+			if (!GameState.GetIsGameOver() && GameState.GetIsGameStarted())
+			{
+				GameState.ChargeProjectionVelocity();
+			}
 		}
-	}
-	else
-	{
-		bMiddleMousePressed = false;
+		else
+		{
+			GameState.DischargeProjectionVelocity();
+		}
+
+		// Right Click to Spawn Ball.
+		if (SFML::Mouse::isButtonPressed(SFML::Mouse::Right))
+		{
+			if (!bRightMousePressed)
+			{
+				if (!GameState.GetIsGameOver() && GameState.GetIsGameStarted())
+				{
+					SpawnBall();
+				}
+				bRightMousePressed = true;
+			}
+		}
+		else
+		{
+			bRightMousePressed = false;
+		}
+		// Middle Button ： Reset
+		if (SFML::Mouse::isButtonPressed(SFML::Mouse::Middle))
+		{
+			if (!bMiddleMousePressed)
+			{
+				bMiddleMousePressed = true;
+
+				GameState.ResetGame();
+				TickHandle.ClearTimer();
+				CenterTextCache->Init();
+				CenterTextCache->bIsActive = true;
+				CenterTextCache->bIsPaused = true;
+				PivotCache->ResetToInitTransform();
+				WheelCache->ResetToInitTransform();
+
+				for (auto& i : Balls)
+					i->MakeInactive();
+			}
+		}
+		else
+		{
+			bMiddleMousePressed = false;
+		}
 	}
 
 	// Update Info Gauge
@@ -260,7 +264,11 @@ void Application::Tick(const float DeltaTime)
 		AppWindow.draw(*Itr->GetShape());
 
 	for (auto& Itr : Balls)
+	{
 		AppWindow.draw(*Itr->GetShape());
+		AppWindow.draw(*Itr->DebugForward);
+	}
+	
 
 	for (auto& Itr : TextRenderer.GetTextData())
 	{
@@ -390,6 +398,20 @@ void Application::SetupText()
 	t6->Init();
 	ElapsedTimeCache = t6.get();
 	TextRenderer.Add(t6);
+
+	const float ViewportX = (float)RenderWindowData.Width;
+	const float ViewportY = (float)RenderWindowData.Height;
+	std::unique_ptr<FTextData> t7 = std::make_unique<FTextData>(); // middle
+	t7->StartLocation = SFML::Vector2f(ViewportX/2, ViewportY/2);
+	t7->EndLocation = SFML::Vector2f(ViewportX / 2, -16);
+	t7->FadeTime = 1.0f;
+	t7->Text.setCharacterSize(30);
+	t7->TextData = "SPACE TO START!";
+	t7->Font = FAssetLoader::FindFont(&AssetLoader, RESOURCES_FONT_CHALK);
+	t7->bIsPaused = true;
+	t7->Init();
+	CenterTextCache = t7.get();
+	TextRenderer.Add(t7);
 }
 
 void Application::SpawnBall()
@@ -453,6 +475,7 @@ void Application::SpawnBall()
 void Application::PivotTick(b2Actor2D* Actor)
 {
 	if (!Actor) return;
+	if (!Actor->GetPackage()->GameState.GetIsGameStarted()) return;
 
 	const float ElapsedTime = Actor->GetPackage()->GetTickHandle().GetElapsedTime();
 	const float cosfTime = cosf(ElapsedTime);
@@ -465,6 +488,7 @@ void Application::PivotTick(b2Actor2D* Actor)
 void Application::WheelTick(b2Actor2D* Actor)
 {
 	if (!Actor) return;
+	if (!Actor->GetPackage()->GameState.GetIsGameStarted()) return;
 
 	b2Vec2 PivotLocation = Actor->GetPackage()->PivotCache->GetBodyInstance()->GetPosition();
 	Actor->GetBodyInstance()->SetTransform(PivotLocation, Actor->GetBodyInstance()->GetAngle());
@@ -473,6 +497,7 @@ void Application::WheelTick(b2Actor2D* Actor)
 void Application::BallTick(b2Actor2D* Actor)
 {
 	if (!Actor) return;
+	if (!Actor->GetPackage()->GameState.GetIsGameStarted()) return;
 
 	const bool Ax = Actor->GetLocation().x >= Actor->GetPackage()->RenderWindowData.Width + 64.0f;
 	const bool Bx = Actor->GetLocation().x <= -64.0f;
@@ -487,6 +512,8 @@ void Application::BallTick(b2Actor2D* Actor)
 
 void Application::SensorOverlap(b2Actor2D* OverlapActor)
 {
+	if (!OverlapActor->GetPackage()->GameState.GetIsGameStarted()) return;
+
 	if (OverlapActor->GetObjectName() == "Ball")
 	{
 		OverlapActor->GetPackage()->GameState.ScoreBall();
