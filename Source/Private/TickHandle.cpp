@@ -28,6 +28,7 @@ void FTickHandle::Tick()
 {
 	if (!ContextObject) return;
 	if (!ContextObject->GetWorld()) return;
+
 	
 	TimeElapsedSinceLastFrame += FixedUpdateClock.restart().asSeconds();
 	if (TimeElapsedSinceLastFrame >= DELTA_TIME_STEP)
@@ -40,6 +41,7 @@ void FTickHandle::Tick()
 
 		ContextObject->Tick(DELTA_TIME_STEP);
 		TimeElapsedSinceLastFrame -= DELTA_TIME_STEP;
+
 		ElapsedTime += DELTA_TIME_STEP;
 	}
 }

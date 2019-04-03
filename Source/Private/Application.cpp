@@ -159,7 +159,7 @@ void Application::Tick(const float DeltaTime)
 
 	for (auto& i : b2Actors)
 		if (i) i->Tick();
-	
+
 	for (auto& i : Balls)
 		if (i) i->Tick();
 	
@@ -171,71 +171,70 @@ void Application::Tick(const float DeltaTime)
 	CountdownTimeCache->Text.setString("REMAINING TIME\n" + GameState.GetRemainingTimeString() + " S");
 	ElapsedTimeCache->Text.setString("ELAPSED MIN\n" + GameState.GetElapsedTimeMinString() + " M" + GameState.GetElapsedTimeSecondString() + " S");
 
-	if (AppWindow.hasFocus())
+	
+	if (SFML::Keyboard::isKeyPressed(SFML::Keyboard::Space))
 	{
-		if (SFML::Keyboard::isKeyPressed(SFML::Keyboard::Space))
+		if (!GameState.GetIsGameStarted())
 		{
-			if (!GameState.GetIsGameStarted())
-			{
-				GameState.StartGame();
-				CenterTextCache->bIsPaused = false;
-			}
-		}
-
-		if (SFML::Mouse::isButtonPressed(SFML::Mouse::Left))
-		{
-
-			//If the game already Started, Do something else.
-			if (!GameState.GetIsGameOver() && GameState.GetIsGameStarted())
-			{
-				GameState.ChargeProjectionVelocity();
-			}
-		}
-		else
-		{
-			GameState.DischargeProjectionVelocity();
-		}
-
-		// Right Click to Spawn Ball.
-		if (SFML::Mouse::isButtonPressed(SFML::Mouse::Right))
-		{
-			if (!bRightMousePressed)
-			{
-				if (!GameState.GetIsGameOver() && GameState.GetIsGameStarted())
-				{
-					SpawnBall();
-				}
-				bRightMousePressed = true;
-			}
-		}
-		else
-		{
-			bRightMousePressed = false;
-		}
-		// Middle Button ： Reset
-		if (SFML::Mouse::isButtonPressed(SFML::Mouse::Middle))
-		{
-			if (!bMiddleMousePressed)
-			{
-				bMiddleMousePressed = true;
-
-				GameState.ResetGame();
-				TickHandle.ClearTimer();
-				CenterTextCache->Init();
-				CenterTextCache->bIsActive = true;
-				CenterTextCache->bIsPaused = true;
-				PivotCache->ResetToInitTransform();
-				WheelCache->ResetToInitTransform();
-
-				for (auto& i : Balls)
-					i->MakeInactive();
-			}
-		}
-		else
-		{
-			bMiddleMousePressed = false;
+			GameState.StartGame();
+			CenterTextCache->bIsPaused = false;
 		}
 	}
+
+	if (SFML::Mouse::isButtonPressed(SFML::Mouse::Left))
+	{
+
+		//If the game already Started, Do something else.
+		if (!GameState.GetIsGameOver() && GameState.GetIsGameStarted())
+		{
+			GameState.ChargeProjectionVelocity();
+		}
+	}
+	else
+	{
+		GameState.DischargeProjectionVelocity();
+	}
+
+	// Right Click to Spawn Ball.
+	if (SFML::Mouse::isButtonPressed(SFML::Mouse::Right))
+	{
+		if (!bRightMousePressed)
+		{
+			if (!GameState.GetIsGameOver() && GameState.GetIsGameStarted())
+			{
+				SpawnBall();
+			}
+			bRightMousePressed = true;
+		}
+	}
+	else
+	{
+		bRightMousePressed = false;
+	}
+	// Middle Button ： Reset
+	if (SFML::Mouse::isButtonPressed(SFML::Mouse::Middle))
+	{
+		if (!bMiddleMousePressed)
+		{
+			bMiddleMousePressed = true;
+
+			GameState.ResetGame();
+			TickHandle.ClearTimer();
+			CenterTextCache->Init();
+			CenterTextCache->bIsActive = true;
+			CenterTextCache->bIsPaused = true;
+			PivotCache->ResetToInitTransform();
+			WheelCache->ResetToInitTransform();
+
+			for (auto& i : Balls)
+				i->MakeInactive();
+		}
+	}
+	else
+	{
+		bMiddleMousePressed = false;
+	}
+	
 
 	// Update Info Gauge
 	float maxVelocity = 60.0f;
@@ -259,7 +258,8 @@ void Application::Tick(const float DeltaTime)
 
 	for (auto& Itr : RenderShapes)
 		AppWindow.draw(*Itr);
-	
+
+
 	for (auto& Itr : b2Actors)
 		AppWindow.draw(*Itr->GetShape());
 
@@ -268,14 +268,12 @@ void Application::Tick(const float DeltaTime)
 		AppWindow.draw(*Itr->GetShape());
 		AppWindow.draw(*Itr->DebugForward);
 	}
-	
 
 	for (auto& Itr : TextRenderer.GetTextData())
 	{
 		if(Itr->bIsActive)
 			AppWindow.draw(Itr->Text);
 	}
-		
 
 	AppWindow.draw(AngleIndicators, 2, SFML::Lines);
 	AppWindow.display();
@@ -416,17 +414,10 @@ void Application::SetupText()
 
 void Application::SpawnBall()
 {
-	const SFML::Vector2f PivotLocation = PivotCache->GetLocation();
-	const SFML::Vector2f MouseLocation = SFML::Vector2f(SFML::Mouse::getPosition(AppWindow));
-
-	// Update Rotation Angle
-	const float dx = MouseLocation.x - PivotLocation.x;
-	const float dy = MouseLocation.y - PivotLocation.y;
-	const float CurrentRotationAngle = (atan2(dy, dx)) * 180.0f / 3.142f;
-
+	// Get magnitude of the multiplier.
 	const float velocity = GameState.GetChargedBallVelocity();
 
-	const SFML::Vector2f BallSpawnLocation(PivotLocation + SFML::Vector2f(32, 32));
+	const SFML::Vector2f BallSpawnLocation(PivotCache->GetLocation() + SFML::Vector2f(32, 32));
 
 	// Construct data to parse.
 	Fb2ActorSpawnParam SpawnParam;
@@ -437,7 +428,7 @@ void Application::SpawnBall()
 	SpawnParam.BodyType = Eb2ShapeType::ECT_Circle;
 	SpawnParam.Size = SFML::Vector2f(32, 32);
 	SpawnParam.Location = BallSpawnLocation;
-	SpawnParam.Rotation = CurrentRotationAngle;
+	SpawnParam.Rotation = 0.0f;
 	SpawnParam.bIsDynamicBody = true;
 	SpawnParam.bGenerateOverlaps = false;
 	SpawnParam.bAutoActivate = true;
@@ -451,7 +442,8 @@ void Application::SpawnBall()
 		b2Actor2D* const ReuseBall = (*pActor) ? (*pActor).get() : nullptr;
 		if (ReuseBall)
 		{
-			ReuseBall->GetBodyInstance()->SetLinearVelocity(b2Vec2(-velocity * sinf(-CurrentRotationAngle * 3.142f / 180.0f), +velocity * cosf(-CurrentRotationAngle * 3.142f / 180.0f)));
+			ReuseBall->GetBodyInstance()->SetLinearVelocity(b2Vec2(velocity, -velocity));
+			std::cout << "X: "<<ReuseBall->GetBodyInstance()->GetLinearVelocity().x << " Y: "<<ReuseBall->GetBodyInstance()->GetLinearVelocity().y << std::endl;
 			ReuseBall->SetInitTransform(SpawnParam.Location, SpawnParam.Rotation);
 			ReuseBall->ResetToInitTransform();
 			ReuseBall->Activate();
@@ -462,7 +454,8 @@ void Application::SpawnBall()
 		// Construct new.
 		std::unique_ptr<b2Actor2D> Ball = std::make_unique<b2Actor2D>(SpawnParam);
 		Ball->GetShape()->setTexture(FAssetLoader::FindTexture(&AssetLoader, RESOURCES_TEXTURE_BASKETBALL));
-		Ball->GetBodyInstance()->SetLinearVelocity(b2Vec2(-velocity * sinf(-CurrentRotationAngle * 3.142f / 180.0f), +velocity * cosf(-CurrentRotationAngle * 3.142f / 180.0f)));
+		Ball->GetBodyInstance()->SetLinearVelocity(b2Vec2(velocity , -velocity));
+		std::cout << "X: " << Ball->GetBodyInstance()->GetLinearVelocity().x << " Y: " << Ball->GetBodyInstance()->GetLinearVelocity().y << std::endl;
 		Ball->GetFixtureDefinition()->density = 0.83f;
 		Ball->GetFixtureDefinition()->friction = 0.4f;
 		Ball->GetFixtureDefinition()->restitution = 0.65f;
@@ -475,11 +468,9 @@ void Application::SpawnBall()
 void Application::PivotTick(b2Actor2D* Actor)
 {
 	if (!Actor) return;
-	if (!Actor->GetPackage()->GameState.GetIsGameStarted()) return;
+	//if (!Actor->GetPackage()->GameState.GetIsGameStarted()) return;
 
 	const float ElapsedTime = Actor->GetPackage()->GetTickHandle().GetElapsedTime();
-	const float cosfTime = cosf(ElapsedTime);
-	
 	const float deltaY = 3.0f * cosf(ElapsedTime) / 32.0f;
 	b2Vec2 Location = Actor->GetBodyInstance()->GetPosition() + b2Vec2(0, deltaY);
 	Actor->GetBodyInstance()->SetTransform(Location, Actor->GetBodyInstance()->GetAngle());
@@ -488,7 +479,7 @@ void Application::PivotTick(b2Actor2D* Actor)
 void Application::WheelTick(b2Actor2D* Actor)
 {
 	if (!Actor) return;
-	if (!Actor->GetPackage()->GameState.GetIsGameStarted()) return;
+	//if (!Actor->GetPackage()->GameState.GetIsGameStarted()) return;
 
 	b2Vec2 PivotLocation = Actor->GetPackage()->PivotCache->GetBodyInstance()->GetPosition();
 	Actor->GetBodyInstance()->SetTransform(PivotLocation, Actor->GetBodyInstance()->GetAngle());

@@ -20,7 +20,7 @@ public:
 
 	void StartGame();
 	void ResetGame();
-	void ScoreBall()						{ Score++; }
+	void ScoreBall()				{ Score++; RequiredBallCount--; }
 
 	int GetScore()					const	{ return Score; }
 	int GetHiScore()				const	{ return HiScore; }

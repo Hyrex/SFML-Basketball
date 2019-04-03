@@ -37,6 +37,7 @@ public:
 
 	b2World* GetWorld() const { return World.get(); }
 	FTickHandle& GetTickHandle() { return TickHandle;  }
+	SFML::RenderWindow* GetWindow() { return &AppWindow; }
 
 private:
 
