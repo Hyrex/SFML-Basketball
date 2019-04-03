@@ -241,8 +241,5 @@ void b2Actor2D::MakeInactive()
 	BodyInstance->SetAwake(false);
 
 	ObjectShapes.Get()->setPosition(SFML::Vector2f(-200, -200));
-
-	//ObjectShapes.Get()->setRotation(BodyInstance->GetAngle() * 180 / b2_pi);
-	//ObjectShapes.Get()->setPosition(BodyInstance->GetPosition().x*PIXEL_PER_METER, BodyInstance->GetPosition().y*PIXEL_PER_METER);
-
+	DebugForward->setPosition(SFML::Vector2f(-200, -200));
 }

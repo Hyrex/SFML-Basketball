@@ -40,6 +40,11 @@ public:
 
 private:
 
+	static void PivotTick(b2Actor2D* Actor);
+	static void WheelTick(b2Actor2D* Actor);
+	static void BallTick(b2Actor2D* Actor);
+	static void SensorOverlap(b2Actor2D* OverlapActor);
+
 	void MakeTrack();
 	void MakeProjector();
 	void SetupText();
@@ -87,11 +92,5 @@ private:
 	FTextData* ElapsedTimeCache;
 	FTextData* CenterTextCache;
 
-	static void PivotTick(b2Actor2D* Actor);
-	static void WheelTick(b2Actor2D* Actor);
-	static void BallTick(b2Actor2D* Actor);
-	static void SensorOverlap(b2Actor2D* OverlapActor);
-
-
-	//
+	
 };

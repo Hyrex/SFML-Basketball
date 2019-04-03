@@ -107,7 +107,6 @@ private:
 	void(*OnEndOverlapCallback)(b2Actor2D* OverlappedActor) = 0;
 	void(*TickCallback)(b2Actor2D* Actor) = 0;
 
-
 	std::string ObjectName;
 
 	/** Internally contains unique ptr to assigned shape. (Try std::variant)*/

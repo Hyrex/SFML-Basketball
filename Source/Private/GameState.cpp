@@ -25,18 +25,12 @@ void FGameState::ResetValues()
 
 void FGameState::ChargeProjectionVelocity()
 {
-	if (BallVelocity <= 60.0f)
-		BallVelocity += DELTA_TIME_STEP * 5.0f;
-	else
-		BallVelocity = 60.0f;
+	BallVelocity = (BallVelocity <= 60.0f) ? BallVelocity + (DELTA_TIME_STEP * 5.0f) : 60.0f;
 }
 
 void FGameState::DischargeProjectionVelocity()
 {
-	if (BallVelocity >= 5.0f)
-		BallVelocity -= DELTA_TIME_STEP * 5.0f;
-	else
-		BallVelocity = 5.0f;
+	BallVelocity = (BallVelocity >= 5.0f) ? BallVelocity - (DELTA_TIME_STEP * 5.0f) : 5.0f;
 }
 
 bool FGameState::BindApplication(Application * Object)

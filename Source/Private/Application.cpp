@@ -437,7 +437,7 @@ void Application::SpawnBall()
 	SpawnParam.BodyType = Eb2ShapeType::ECT_Circle;
 	SpawnParam.Size = SFML::Vector2f(32, 32);
 	SpawnParam.Location = BallSpawnLocation;
-	SpawnParam.Rotation = 0.0f;
+	SpawnParam.Rotation = CurrentRotationAngle;
 	SpawnParam.bIsDynamicBody = true;
 	SpawnParam.bGenerateOverlaps = false;
 	SpawnParam.bAutoActivate = true;
