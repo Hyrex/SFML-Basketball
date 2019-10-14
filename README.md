@@ -1,24 +1,18 @@
 # SFML-Basketball
 
-SFML Basketball were one point my unversity Box2D project. 
-This project is now refactored and make alive with neccessary dll to ensure it can run easily. However, the gameplay or design is subjected to change as the key goal is demonstrate code intergration, less on "is it fun".
+SFML Basketball was one of my unversity Box2D project. 
+The goal of this project is to show what kind of possible games to make with Physics Engine. 
 
+Design and gameplay was not changed, but the code is updated to be more friendly than previous version. ".
 Assets are mostly internet sourced, and they were used as "educational purposes". Please beware of copyright issues. 
 
-SFML Link : https://www.sfml-dev.org/
+Setup
+---
+1. Have SFML v2.5.1 Visual C++15 (2017) 64-bit Downloaded and place under C:/SFML-2.5.1-64-bit/. Make sure the include and bin folder path matches. 
+- For SFML, you can download it here : https://www.sfml-dev.org/. 32-bit doesn't work with Box2D. Dll are in repo for easier linkage.
+- Your path location should looks like this : 
+  - SFML include location : C:/SFML-2.5.1-64-bit/include
+  - SFML lib location : C:/SFML-2.5.1-64-bit/lib
 
-SFML Version : v2.5.1
-
-SFML Build: Visual C++ 15 (2017)-64-bit (Compatible with Box2D) (Sorry, 32-bit does't like Box2D)
-
-(SFML include location : C:/SFML-2.5.1-64-bit/includes) Folder renamed.
-
-(SFML lib location : C:/SFML-2.5.1-64-bit/lib) Folder renamed.
-
-Box2D Link : https://github.com/erincatto/Box2D
-
-There is an existing Box2D.lib submitted along the project. Follow the documentation and build Box2D.lib if you wish to rebuild. Remember to setup them again inside Solution Properties. I submit DLL because I found out their build flow is not very straight forward to me.
-
-You can only build x64 due to Box2D and SFML combined.
-
-Feel free to reference or contributes changes.
+2. Have Box2D downloaded : https://github.com/erincatto/Box2D and place it under C:/Box2D-master/. 
+- I have included a Box2D.lib built along with the project. If you wish to rebuild, follow the Box2D github instruction and relink the lib in Solution Properties. 
